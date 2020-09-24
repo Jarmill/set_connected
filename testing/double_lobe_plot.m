@@ -1,3 +1,5 @@
+%plot the double-lobe region
+
 x = sdpvar(2,1);
 
 order = 4;
