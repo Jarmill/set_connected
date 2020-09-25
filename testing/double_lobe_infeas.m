@@ -1,5 +1,11 @@
 %try to do proofs of disconnectedness of double-lobe region
 
+%This is a farkas certificate of infeasibility
+%there exists a function v where v <= 0 on X0, v >= 0 on X1, and v
+%decreases along trajectories. Trajectories will never cross the surface
+%v(t,x) = 0, and this level sets separates X0 and X1.
+
+
 n = 2;
 
 t = sdpvar(1,1);
@@ -11,15 +17,15 @@ order = 1;
 d =2*order;
 T = 2; %maximum time
 
-FEAS = 0;
+FEAS = 1;
 
-% if FEAS
-%     x0 = [1.25; -1];
-%     x1 = [1.5; 0.5];
-% else
+if FEAS
+    x0 = [1.25; -1];
+    x1 = [1.5; 0.5];
+else
     x0 = [-0.75; -0.25];
     x1 = [1.5; 0.5];
-% end
+end
 
 %constraint set
 f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
@@ -47,15 +53,13 @@ v1t = replace(v, x, x1);
 
 cons= [];
 
-Tvar = 1;
+Tvar = 0;
 vT = replace(v, [t; x], [T; x1]);
-if Tvar
-    [pT, consT, coeffT] = constraint_psatz(v1t + t, Tcons, t, d);
-else
-    pT = vT;
-    coeffT = [];
-    consT = (pT >= 0);
-end
+
+pT = vT;
+coeffT = [];
+consT = (pT >= 0);
+
 [pL, consL, coeffL] = constraint_psatz(-Lv, Allcons, [t; x; u], d);
 
 %objective
@@ -68,10 +72,18 @@ coeff = [cv; coeffT; coeffL];
 cons = [consT; consL];
 opts = sdpsettings('solver', 'mosek');
 opts.sos.model = 2;
-if FEAS
-    [sol, monom, Gram, residual] = solvesos(cons, objective, opts, [coeff]);
-else
-    cons = [cons; v0 == 1];
-    [sol, monom, Gram, residual] = solvesos(cons, objective, opts, [coeff]);
-end
-value(v0)
+
+cons = [cons; v0 == -1];
+[sol, monom, Gram, residual] = solvesos(cons, objective, opts, [coeff]);
+
+% value(v0)
+
+
+
+
+v_rec = value(cv)' * monolist([t; x], d);
+fv = polyval_func(v_rec, [t; x]);
+
+vv0 = fv([0; x0]);
+vv1 = fv([T; x1]));
+[vv0, vv1];
