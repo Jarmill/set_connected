@@ -5,7 +5,7 @@
 %decreases along trajectories. Trajectories will never cross the surface
 %v(t,x) = 0, and this level sets separates X0 and X1.
 
-SOLVE = 0;
+SOLVE = 1;
 DRAW = 1;
 
 if SOLVE
@@ -15,29 +15,28 @@ if SOLVE
 
     opt.scale = 1;
 
+
     order = 2;
-%     order = 4;
     d =2*order;
-    T = 2; %maximum time
+    T = 3; %maximum time
 
     FEAS = 0;
     SET = 0;
     if FEAS
-        opt.X0 = [1.25; -1];
-        opt.X1 = [1.5; 0.5];
-
+%         opt.X0 = [1.25; -1];
+%         opt.X1 = [1.5; 0.5];
+        
+         opt.X0 = [1.05; -1];
+         opt.X1 = [0.4; 0.7];
+        
+        
+%         opt.X0 = [1.5; -1];
+%         opt.X1 = [1.6; 1]; %x=1.5 works, 1.6 does not
     else
-        if SET
-            opt.X0.ineq = 0.05 - (opt.x(1) + 0.75)^2 + (opt.x(2) + 0.25)^2;
-    %         opt.X1.ineq = 0.05 - (opt.x(1) - 1.5)^2 + (opt.x(2)-0.5)^2;
-            opt.X1 = [1.5; 0.5];
-        else
             opt.X0 = [-0.75; 0];
             opt.X1 = [1.5; 0.5];
 %             opt.X1 = [1; 0.5];
 %             opt.X1 = [1; -0.5];
-%             opt.X1 = [0.5; 0.75]; %needs order 4
-        end
     end
 
     opt.box = 0;
@@ -48,17 +47,17 @@ if SOLVE
     X = fill_constraint(X);
 
     opt.X = X;
-
-    out = set_path_infeas(opt, order);
+    opt.scale = 0;
+    out = set_path_feas(opt, order);
 end
 
-if DRAW && out.farkas
+if DRAW && out.feas
     figure(1)
     clf
     syms t [1 1]
     syms x [2 1]
     fy = f(x);
-    vy = out.vval([t; x]);
+    vy = out.vval(t, x);
 
     hold on
     xl = [-2, 2];
@@ -71,14 +70,14 @@ if DRAW && out.farkas
     scatter(opt.X1(1),opt.X1(2), 100, '*k', 'DisplayName', 'X1')
     
     vy0 = subs(vy, t, 0);
-    fimplicit(vy0 == 1, [xl, yl], 'DisplayName','v(0, x0) <= 1')
+    fimplicit(vy0 == out.v0, [xl, yl], 'DisplayName','v(t,x) <= v(0, x0)')
 
     vyT = subs(vy, t, opt.Tmax);
-    fimplicit(vyT == 0, [xl, yl], 'DisplayName','v(T, x1) > 0')
+    fimplicit(vyT == out.v1, [xl, yl], 'DisplayName','v(t, x) <= v(T, x1)')
     
     legend('location', 'northwest')
     
-    title('Farkas Infeasibility Certificate')
+    title(['Path Feasibility Certificate: time=', num2str(-out.v0, 3)])
     
     hold off
 end

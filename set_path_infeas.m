@@ -1,11 +1,17 @@
 function [out] = set_path_infeas(options, order)
 %SET_PATH_INFEAS Check for infeasibility certificate of path connection
-%Use Farkas Lemma
-% outputArg1 = inputArg1;
-% outputArg2 = inputArg2;
-
-
-%try to do proofs of disconnectedness of double-lobe region
+%Use Farkas Lemma to find a violating polynomial
+%Input:
+%   options: set_path_options data structure
+%   order:   order of relaxation (degree = 2*order)
+%
+%Output:
+%   out:     out data structure
+%       farkas: whether a farkas certificate has been found (1 or 0)
+%       vval:   A function that evaluates v(t,x)
+%       Lvval:  A function that evaluates Luv = dv/dt + u'*dv/dx
+%       v0:     If X0 is a set, v0 is the value of v(0, x0)
+%       v1:     If X1 is a set, v0 is the value of v(T, x1)
 
 %This is a farkas certificate of infeasibility
 %there exists a function v where v <= 0 on X0, v >= 0 on X1, and v
@@ -151,10 +157,10 @@ if sol.problem == 0
     out.vval = vval;
     out.Lvval = Lvval;
     
-    if set0       
+    if ~set0       
         out.v0 = value(v0);
     end
-    if set1
+    if ~set1
         out.vT = value(vT);
     end
     
