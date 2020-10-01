@@ -195,6 +195,9 @@ if status == 0
 
     out.v0 = out.vval(0, options.X0);
     out.v1 = out.vval(options.Tmax, options.X1);
+    
+    %TODO: extract out the dual functions `zeta' from constraints
+    
 elseif status == -1
     %infeasible problem
     out.feas = 0;

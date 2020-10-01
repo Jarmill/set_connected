@@ -55,7 +55,8 @@ if SOLVE
 
     opt.X = X;
     opt.scale = 0;
-    out = set_path_feas(opt, order);
+%     out = set_path_feas(opt, order);
+    out = set_path_feas_box(opt, order);
 end
 
 if DRAW && out.feas
@@ -69,6 +70,12 @@ if DRAW && out.feas
     hold on
     xl = [-2, 2];
     yl = [-2, 2];
+    
+    % TODO: faster plots
+    %explicitly plot the circles and lines of the annulus
+    %make it easy
+    
+    
     fimplicit(x'*x == Rinner^2, [xl, yl], 'k', 'DisplayName','X')
 %     fimplicit(fy == 0, [xl, yl], 'DisplayName','X')
 
@@ -83,8 +90,8 @@ if DRAW && out.feas
     vyT = subs(vy, t, opt.Tmax);
     fimplicit(vyT == out.v1, [xl, yl], 'DisplayName','v(t, x) <= v(T, x1)')
     
-%     fimplicit(x'*x == Router^2, [xl, yl], 'k', 'HandleVisibility','off')
-%     fimplicit(x(1)^2 == Absx^2, [xl, yl], 'k', 'HandleVisibility','off')
+    fimplicit(x'*x == Router^2, [xl, yl], 'k', 'HandleVisibility','off')
+    fimplicit(x(1)^2 == Absx^2, [xl, yl], 'k', 'HandleVisibility','off')
     
     plot(Absx*[-1, -1], yl, 'k')
 
