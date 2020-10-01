@@ -5,7 +5,7 @@
 %decreases along trajectories. Trajectories will never cross the surface
 %v(t,x) = 0, and this level sets separates X0 and X1.
 
-SOLVE = 0;
+SOLVE = 1;
 DRAW = 1;
 
 if SOLVE
@@ -13,7 +13,7 @@ if SOLVE
     opt.x = sdpvar(2,1);
     opt.Tmax = 2;
 
-    opt.scale = 1;
+    opt.scale = 0;
 
     order = 2;
 %     order = 4;
@@ -32,11 +32,12 @@ if SOLVE
     %         opt.X1.ineq = 0.05 - (opt.x(1) - 1.5)^2 + (opt.x(2)-0.5)^2;
             opt.X1 = [1.5; 0.5];
         else
-            opt.X0 = [-0.75; 0];
-            opt.X1 = [1.5; 0.5];
+%             opt.X0 = [-0.75; 0];
+            opt.X0 = [-0.75; 0.5];
+%             opt.X1 = [1.5; 0.5];
 %             opt.X1 = [1; 0.5];
 %             opt.X1 = [1; -0.5];
-%             opt.X1 = [0.5; 0.75]; %needs order 4
+            opt.X1 = [0.5; 0.75]; %needs order 4
         end
     end
 
@@ -49,11 +50,12 @@ if SOLVE
 
     opt.X = X;
 
-    out = set_path_infeas(opt, order);
+%     out = set_path_infeas(opt, order);
+    out = set_path_infeas_box(opt, order);
 end
 
 if DRAW && out.farkas
-    figure(1)
+    figure(2)
     clf
     syms t [1 1]
     syms x [2 1]
@@ -65,17 +67,26 @@ if DRAW && out.farkas
     yl = [-2, 2];
     fimplicit(fy == 0, [xl, yl], 'DisplayName','X')
 
-    epsilon = 1e-4;
+    epsilon = 1e-5;
 
     scatter(opt.X0(1),opt.X0(2), 100, 'ok', 'DisplayName', 'X0')
     scatter(opt.X1(1),opt.X1(2), 100, '*k', 'DisplayName', 'X1')
     
     vy0 = subs(vy, t, 0);
-    fimplicit(vy0 == 1, [xl, yl], 'DisplayName','v(0, x0) <= 1')
+    color0 = [0.4940, 0.1840, 0.5560];
+    colorT = [0.4660, 0.6740, 0.1880];
+   
+    
+    fimplicit(vy0 == -1, [xl, yl], 'DisplayName','v(0, x0) <= -1' ,'Color', color0)
+    fimplicit(vy0 == -epsilon, [xl, yl], ':', 'Color', color0, 'DisplayName','v(0, x0) < 0')    
+    
 
     vyT = subs(vy, t, opt.Tmax);
-    fimplicit(vyT == 0, [xl, yl], 'DisplayName','v(T, x1) > 0')
+    fimplicit(vyT == 1, [xl, yl], 'DisplayName','v(T, x1) >= 1', 'Color', colorT)
+%     fimplicit(vyT == epsilon, [xl, yl], 'DisplayName','v(T, x1) > 0')
     
+    fimplicit(vyT == epsilon, [xl, yl], ':', 'Color', colorT, 'DisplayName','v(T, x1) > 0')
+
     legend('location', 'northwest')
     
     title('Farkas Infeasibility Certificate')

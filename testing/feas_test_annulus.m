@@ -21,33 +21,36 @@ if SOLVE
     T = 3; %maximum time
 
     FEAS = 1;
-    SET = 0;
+    SEP = 0;
+    
     if FEAS
-%         opt.X0 = [1.25; -1];
-%         opt.X1 = [1.5; 0.5];
-
-        opt.X0 = [1.25; -1];
-%         opt.X1 = [1.7; 1]; %x=1.5 works, 1.6 does not
-        opt.X1 = [0.7; 0.5];
-        
-%          opt.X0 = [1.05; -1];
-%          opt.X1 = [0.4; 0.7];
-        
-        
-%         opt.X0 = [1.5; -1];
-%         opt.X1 = [1.6; 1]; %x=1.5 works, 1.6 does not
+        opt.X0 = [1; -1];
+        opt.X1 = [1; 1];
     else
-            opt.X0 = [-0.75; 0];
-            opt.X1 = [1.5; 0.5];
-%             opt.X1 = [1; 0.5];
-%             opt.X1 = [1; -0.5];
+        opt.X0 = [1; -1];
+        opt.X1 = [-1; -1];
     end
 
+    %constraint set
+%     Rinner = 1.4;
+    Rinner = 1;
+    Router = 1.8;
+    Absx = 0.5;
+
+    x = opt.x;
+    X = struct;
+    if SEP
+        X.ineq = [x'*x - Rinner^2; Router^2 - x'*x];
+    else
+        X.ineq = [x'*x - Rinner^2; Router^2 - x'*x; x(1)^2 - Absx^2];
+    end
+    X = fill_constraint(X);
+    
     opt.box = 0;
 
     %constraint set
-    f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
-    X.ineq = f(opt.x);
+%     f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
+%     X.ineq = f(opt.x);
     X = fill_constraint(X);
 
     opt.X = X;
@@ -60,13 +63,14 @@ if DRAW && out.feas
     clf
     syms t [1 1]
     syms x [2 1]
-    fy = f(x);
+%     fy = f(x);
     vy = out.vval(t, x);
 
     hold on
     xl = [-2, 2];
     yl = [-2, 2];
-    fimplicit(fy == 0, [xl, yl], 'DisplayName','X')
+    fimplicit(x'*x == Rinner^2, [xl, yl], 'k', 'DisplayName','X')
+%     fimplicit(fy == 0, [xl, yl], 'DisplayName','X')
 
     epsilon = 1e-4;
 
@@ -78,8 +82,12 @@ if DRAW && out.feas
 
     vyT = subs(vy, t, opt.Tmax);
     fimplicit(vyT == out.v1, [xl, yl], 'DisplayName','v(t, x) <= v(T, x1)')
-            
     
+%     fimplicit(x'*x == Router^2, [xl, yl], 'k', 'HandleVisibility','off')
+%     fimplicit(x(1)^2 == Absx^2, [xl, yl], 'k', 'HandleVisibility','off')
+    
+    plot(Absx*[-1, -1], yl, 'k')
+
     legend('location', 'northwest')
     
     title(['Path Feasibility Certificate: time=', num2str(-out.v0, 3)])

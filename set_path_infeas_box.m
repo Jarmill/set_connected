@@ -1,6 +1,9 @@
-function [out] = set_path_infeas(options, order)
-%SET_PATH_INFEAS Check for infeasibility certificate of path connection
+function [out] = set_path_infeas_box(options, order)
+%SET_PATH_INFEAS_BOX Check for infeasibility certificate of path connection
 %Use Farkas Lemma to find a violating polynomial
+%
+%Efficient formulation where U = [-1, 1]^n
+%
 %Input:
 %   options: set_path_options data structure
 %   order:   order of relaxation (degree = 2*order)
@@ -9,8 +12,9 @@ function [out] = set_path_infeas(options, order)
 %   out:     out data structure
 %       farkas: whether a farkas certificate has been found (1 or 0)
 %       vval:   A function that evaluates v(t,x)
-%       Lvval:  A function that evaluates d
-
+%       Lvval:  A function that evaluates Luv = dv/dt + u'*dv/dx
+%       v0:     If X0 is a set, v0 is the value of v(0, x0)
+%       v1:     If X1 is a set, v0 is the value of v(T, x1)
 
 %This is a farkas certificate of infeasibility
 %there exists a function v where v <= 0 on X0, v >= 0 on X1, and v
@@ -23,7 +27,6 @@ function [out] = set_path_infeas(options, order)
 %variables of problems
 x = options.x;
 n = length(x);
-u = sdpvar(n, 1);
 t = sdpvar(1, 1);
 
 
@@ -46,21 +49,26 @@ else
 end
 T = fill_constraint(T);
 
-U = struct;
-if strcmp(options.U, 'box')
-    U.ineq = 1 - u.^2;
-else
-    U.ineq = 1 - u'*u;
-end
-U = fill_constraint(U);
-
-Allcons.ineq = [T.ineq; X.ineq; U.ineq];
+Allcons.ineq = [T.ineq; X.ineq];
 Allcons.eq = X.eq;
 Allcons = fill_constraint(Allcons);
 
 
 %% form constraints in Yalmip
 [v, cv] = polynomial([t; x], d);
+
+zeta = [];
+coeff_zeta = [];
+cons_zeta_sos = [];
+zeta_sum = 0;
+for i = 1:n
+    [pzeta, czeta] = polynomial([t; x], d);
+    coeff_zeta = [coeff_zeta; czeta];
+    cons_zeta_sos = [cons_zeta_sos; sos(pzeta)];
+    
+    zeta = [zeta; pzeta];
+    zeta_sum = zeta_sum + pzeta;
+end
 
 %test sos program 
 
@@ -96,7 +104,7 @@ if isstruct(X1)
         vT = replace(v, t, options.Tmax);
     end
     
-    [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);
+    [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);        
 else
     %X1 is a point    
     set1 = false;
@@ -112,21 +120,36 @@ end
 
 %value function v decreases along trajectories
 %therefore impossible for trajectories to go from X0 to X1
+
+
+%revise this for the box code
+
 if options.scale
-    Lv = jacobian(v, t) + options.Tmax * jacobian(v,x)*u;
-else    
-    Lv = jacobian(v, t) + jacobian(v,x)*u;
+    scale_weight = options.Tmax;
+else
+    scale_weight = 1;
 end
-[pL, consL, coeffL] = constraint_psatz(-Lv, Allcons, [t; x; u], d);
 
 
+Lv = jacobian(v, t) - scale_weight*jacobian(v,x)*ones(n, 1) - zeta_sum;
 
+[pL, consL, coeffL] = constraint_psatz(-Lv, Allcons, [t; x], d);
+
+cons_u = [];
+coeff_u = [];
+for i = 1:n
+    term_ui = zeta(i) + scale_weight*2*jacobian(v,x(i));
+    [p_ui, cons_ui, coeff_ui] = constraint_psatz(term_ui, Allcons, [t; x], d);
+    
+    cons_u = [cons_u; cons_ui];
+    coeff_u = [coeff_u; coeff_ui];
+end
 
 objective = 0;
 
 %% form the optimization problem
-coeff = [cv; coeff0; coeffT; coeffL];
-cons = [cons0; consT; consL];
+coeff = [cv; coeff0; coeffT; coeffL; coeff_u; coeff_zeta];
+cons = [cons0; consT; consL; cons_zeta_sos; cons_u];
 opts = sdpsettings('solver', options.solver);
 opts.sos.model = 2;
 
@@ -149,12 +172,18 @@ if sol.problem == 0
     
     %find the value function v(t,x) 
     v_rec = value(cv)' * mlist;
-    Lv_rec = jacobian(v_rec, t) + jacobian(v_rec,x)*u;
+%     Lv_rec = jacobian(v_rec, t) + jacobian(v_rec,x)*u;
     vval = polyval_func(v_rec, [t; x]);
-    Lvval = polyval_func(Lv_rec, [t; x; u]);
+%     Lvval = polyval_func(Lv_rec, [t; x; u]);
+    zetaval = 0;
+    
+    coeff_zeta_val = reshape(value(coeff_zeta),[], 2);
+    zeta_rec = coeff_zeta_val'*mlist;
+    zetaval = polyval_func(zeta_rec, [t; x]);
     
     out.vval = vval;
-    out.Lvval = Lvval;
+    out.zetaval = zetaval;
+%     out.Lvval = Lvval;
     
     if ~set0       
         out.v0 = value(v0);
