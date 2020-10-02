@@ -10,6 +10,19 @@ classdef set_path_options < handle
         %terminal time   
         Tmax(1,1) double{mustBePositive}  = 5;           
         
+        
+        %use time independent formulation
+        %by default, will find some controller (no objective)
+        %set_path_feas_box_signed will find an L1-optimal controller
+        time_indep(1,1) logical = false; 
+        
+        
+        %objective to minimize:
+        %   time:       time to reach a point on X1 from X0
+        %   int:        Integral of ||u||^2_2 along trajectories (on box)
+        %               or
+        objective = 'time';
+        
         %function dynamics
         %f: dynamics
         %X: space on which dynamics are valid (arbitrary switching)
@@ -27,12 +40,12 @@ classdef set_path_options < handle
 %         prev_cost = [];
         
         %% Variables and descriptors
-        %variables (array of symbolic variables)
-%         t sym = [];     %time
-%         x sym = [];     %state
-%         w sym = [];     %uncertainty
-%         var = struct('t', [], 'x', [], 'w', []);
+        %variables defining sets (array of symbolic variables)
         x = [];
+        
+        
+        
+        
         %% support sets
         %type @mpol/supcon
         %(X, T): Xt is the support of trajectories at time Tt

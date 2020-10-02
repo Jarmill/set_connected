@@ -1,8 +1,9 @@
-function [out] = set_path_feas_box(options, order)
+function [out] = set_path_feas_box_signed(options, order)
 %SET_PATH_FEAS_BOX Find a path connecting a pair of points from X0 to X1
 %entirely within a set X. This is based on an optimal-control problem
 %
-%Efficient formulation where U = [-1, 1]^n
+%Signed formulation where U = [-1, 1]^n
+%allows for penalizing ||u||_1 along trajectories
 %
 %Input:
 %   options: set_path_options data structure
@@ -37,18 +38,26 @@ mu = meas([t; x]);
 %control and complement occupation measure
 % for i = 1:n
 
-%sigma
-mpol('ts', n, 1);
-mpol('xs', n, n);
+%sigma (positive)
+mpol('tp', n, 1);
+mpol('xp', n, n);
+
+%sigma (negative)
+mpol('tn', n, 1);
+mpol('xn', n, n);
+
 
 %sigma_complement
 mpol('tc', n, 1);
 mpol('xc', n, n);
 
-sigma = cell(n, 1);
+sigma_p = cell(n, 1);
+sigma_n = cell(n, 1);
 sigma_c = cell(n, 1);
+
 for i = 1:n
-    sigma{i} = meas([ts(i); xs(:, i)]);
+    sigma_p{i} = meas([tp(i); xp(:, i)]);
+    sigma_n{i} = meas([tn(i); xn(:, i)]);
     sigma_c{i} = meas([tc(i); xc(:, i)]);
 end
     
@@ -69,15 +78,21 @@ supp_muT = [subs(T, t, tT); xT == options.X1];
 supp_mu  = [T; X];
 
 
-supp_sigma = [];
+
+supp_sigma_p = [];
+supp_sigma_n = [];
 supp_sigma_c = [];
 for i = 1:n
-    supp_sigma_curr = subs(supp_mu, [t; x], [ts(i); xs(:, i)]);
+    supp_sigma_p_curr = subs(supp_mu, [t; x], [tp(i); xp(:, i)]);
+    supp_sigma_n_curr = subs(supp_mu, [t; x], [tn(i); xn(:, i)]);
     supp_sigma_c_curr = subs(supp_mu, [t; x], [tc(i); xc(:, i)]);
     
-    supp_sigma = [supp_sigma; supp_sigma_curr];
+    supp_sigma_p = [supp_sigma_p; supp_sigma_p_curr];
+    supp_sigma_n = [supp_sigma_n; supp_sigma_n_curr];
     supp_sigma_c = [supp_sigma_c; supp_sigma_c_curr];
 end
+
+supp_sigma = [supp_sigma_p; supp_sigma_n; supp_sigma_c];
 
 %moment constraints
 monT = mmon([tT; xT], d);
@@ -94,36 +109,35 @@ else
     scale_weight = 1;
 end
 
-Ay_mu = mom(diff(mon, x)*-one)*scale_weight + mom(diff(mon, t));
+% Ay_mu = mom(diff(mon, x)*-one)*scale_weight + mom(diff(mon, t));
+Ay_mu = mom(diff(mon, t));
 Ay_sigma = 0;
-Acont = [];Acont_lhs = [];
+Acont_lhs = [];
 Acont_rhs = [];
-
 
 %moment substitution of absolute continuity condition
 SUBS = 1;
 
 for i = 1:n
     %liouville
-    mon_i = mmon([ts(i); xs(:, i)], d);
+    mon_p_i = mmon([tp(i); xp(:, i)], d);
+    mon_n_i = mmon([tn(i); xn(:, i)], d);
     mon_c_i = mmon([tc(i); xc(:, i)], d);
-    ts_curr = ts(i);
-    xs_curr = xs(:, i);
-
-    Ay_sigma_curr = mom(2*diff(mon_i, xs(i, i)))*scale_weight;
+    
+    dp = mom(diff(mon_p_i, xp(i, i)));
+    dn = mom(diff(mon_n_i, xn(i, i)));
+    
+    Ay_sigma_curr = (dp - dn)*scale_weight;
     Ay_sigma = Ay_sigma + Ay_sigma_curr;
     
     %absolute continuity
-%     Acont_curr = mom(mon_i) + mom(mon_c_i) - mom(mon);
-%     Acont = [Acont; Acont_curr];
-
     if SUBS
-        Acont_curr = -mom(mon_i) + mom(mon);
+        Acont_curr = -mom(mon_p_i) - mom(mon_n_i) + mom(mon);
         Acont_rhs = [Acont_rhs; Acont_curr];
 
         Acont_lhs = [Acont_lhs; mom(mon_c_i)];
     else
-        Acont_curr = mom(mon_i) + mom(mon_c_i) - mom(mon);
+        Acont_curr = mom(mon_p_i) + mom(mon_n_i) + mom(mon_c_i) - mom(mon);
         Acont_lhs = [Acont_lhs; Acont_curr];
         Acont_rhs = 0;
     end
@@ -139,14 +153,23 @@ Liou = yT - Ay - y0;
 
 %altogether now
 %supp_con = [supp_mu0; supp_muT; supp_mu];
-supp_con = [supp_muT; supp_mu; supp_sigma; supp_sigma_c];
-mom_con  = [Liou == 0; Acont == 0];
+supp_con = [supp_muT; supp_mu; supp_sigma; supp_sigma];
+% mom_con  = [Liou == 0; Acont == 0];
+mom_con  = [Liou == 0; Acont_lhs == Acont_rhs];
 
-
-
-%unsigned box formulation is incompatible with L1 norm
-if opt.time_indep
-    objective = min(0);
+%only the L1 norm and minimum time can be handled
+%L2 norm cannot be done here, since only dsigma(+ -) = udmu is available
+%not u^2 dmu. 
+if strcmp(options.objective, 'L1') || options.time_indep
+    options.time_indep = 1;
+    l1_norm = 0;
+    for i = 1:n
+        mass_p = mass(sigma_p{i});
+        mass_n = mass(sigma_n{i});
+        l1_norm = l1_norm + mass_p + mass_n;
+    end
+    
+    objective = min(l1_norm);
 else
     objective = min(mom(tT)*scale_weight);
 end
@@ -182,20 +205,22 @@ if status == 0
     out.Mocc = double(mmat(mu));
     
     
-    out.Msigma = cell(n, 1);
+    out.Msigma_p = cell(n, 1);
+    out.Msigma_n = cell(n, 1);
     out.Msigma_c = cell(n, 1);
     
     y_sigma = zeros(length(out.MT), n);
     
     for i = 1:n
-        out.Msigma{i} = double(mmat(sigma{i}));
+        out.Msigma_p{i} = double(mmat(sigma_p{i}));
+        out.Msigma_n{i} = double(mmat(sigma_n{i}));
         out.Msigma_c{i} = double(mmat(sigma_c{i}));
     end
     
-    y_sigma = zeros(length(out.Msigma{1}), n);
+    y_sigma = zeros(length(out.Msigma_p{1}), n);
     for i = 1:n
         %moments of control-occupation measure
-        y_sigma(:, i) = out.Msigma{i}(1, :);                
+        y_sigma(:, i) = out.Msigma_p{i}(1, :) - out.Msigma_n{i}(1, :);                
     end
     
     %use control-occupation moments to get controllers
@@ -203,7 +228,7 @@ if status == 0
     
     u_law = u_coeff'*mon_unscale(1:length(u_coeff));
     out.u = @(ti, xi) eval(u_law, [t; x], [ti; xi]);
-    out.f = @(ti, xi) eval(2*u_law - 1, [t; x], [ti; xi]);
+    out.f = @(ti, xi) eval(u_law, [t; x], [ti; xi]);
     
     %functions    
     dual_rec_param = dual_rec{1};
@@ -212,6 +237,7 @@ if status == 0
     v1 = subs(v, x, options.X1);
 
     out.vval = @(ti, xi) eval(v, [t; x], [ti; xi]);    %dual v(t,x,w)
+%     out.Lvval = @(ti, xi) eval(Lv, [t; x], [ti; xi]);   %Lie derivative Lv(t,x,w)
     out.v1val = @(ti) eval(v1, [t], [ti]);    %dual v(t,x,w)
 
     out.v0 = out.vval(0, options.X0);

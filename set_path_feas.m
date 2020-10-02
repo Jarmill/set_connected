@@ -46,9 +46,11 @@ end
 if options.scale
     supp_muT = [tT*(1-tT) >= 0; xT == options.X1];
     supp_mu = [t*(1-t) >= 0; X; U];
+    scale_weight = options.Tmax;
 else
     supp_muT = [tT*(options.Tmax-tT) >= 0; xT == options.X1];
     supp_mu = [t*(options.Tmax-t) >= 0; X; U];
+    scale_weight = 1;
 end
 
 %moment constraints
@@ -70,7 +72,14 @@ Liou = yT - Ay - y0;
 supp_con = [supp_muT; supp_mu];
 mom_con  = (Liou == 0);
 
-objective = min(mom(tT));
+%only L2 and time is available here. Could do Lp with p integral > 1
+%Lp with p rational with lifting, but that is of subsidiary importance
+%would need additional measures to do L1
+if strcmp(opt.objective, 'L2') || opt.time_indep
+    objective = mom(sum(u.^2));
+else
+    objective = min(mom(tT))*scale_weight;
+end
 
 
 mset('yalmip',true);

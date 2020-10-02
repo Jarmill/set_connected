@@ -97,9 +97,8 @@ if DRAW && out.feas
     
     legend('location', 'northwest')
     if strcmp(opt.objective, 'L1')
-        title(['Path Feasibility Certificate: L1 norm=', num2str(-out.v0, 4)])
     else
-        title(['Path Feasibility Certificate: time taken=', num2str(-out.v0, 4)])
+    title(['Path Feasibility Certificate: time taken=', num2str(-out.v0, 4)])
     end
     
     hold off
