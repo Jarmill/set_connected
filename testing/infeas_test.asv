@@ -15,10 +15,8 @@ if SOLVE
 
     opt.scale = 0;
 
-%         order = 2;
-    order = 3;
+    order = 2;
 %     order = 4;
-%     order = 5;
     d =2*order;
     T = 2; %maximum time
 
@@ -37,9 +35,9 @@ if SOLVE
             opt.X0 = [-0.75; 0];
 %             opt.X0 = [-0.75; 0.5];
 %             opt.X1 = [1.5; 0.5];
-            opt.X1 = [1; 0.5];
+%             opt.X1 = [1; 0.5];
 %             opt.X1 = [1; -0.5];
-%             opt.X1 = [0.5; 0.75]; %needs order 4
+            opt.X1 = [0.5; 0.75]; %needs order 4
         end
     end
 
@@ -51,11 +49,11 @@ if SOLVE
     X = fill_constraint(X);
 
     
-    opt.time_indep = 0;
+    opt.time_indep = 1;
     
     opt.X = X;
 
-    out = set_path_infeas(opt, order);
+%     out = set_path_infeas(opt, order);
 %     out = set_path_infeas_box(opt, order);
 end
 

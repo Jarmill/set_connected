@@ -105,7 +105,6 @@ if isstruct(X1)
     set1 = true;
     X1 = fill_constraint(X1);
     if options.time_indep
-         vT = v;
     else
         if options.scale
             vT = replace(v, t, t);
@@ -118,15 +117,11 @@ if isstruct(X1)
 else
     %X1 is a point    
     set1 = false;
-     if options.time_indep
-        vT = replace(v, x, X1);
-     else
-        if options.scale
-            vT = replace(v, [t; x], [1; X1]);
-        else
-            vT = replace(v, [t; x], [options.Tmax; X1]);
-        end
-     end
+    if options.scale
+        vT = replace(v, [t; x], [1; X1]);
+    else
+        vT = replace(v, [t; x], [options.Tmax; X1]);
+    end
 %     [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);
     consT = (vT >= 0);
     coeffT = [];
@@ -134,17 +129,15 @@ end
 
 %value function v decreases along trajectories
 %therefore impossible for trajectories to go from X0 to X1
-
-if options.time_indep
-    Lv = jacobian(v,x)*u;
-else
-    if options.scale
-        Lv = jacobian(v, t) + options.Tmax * jacobian(v,x)*u;
-    else    
-        Lv = jacobian(v, t) + jacobian(v,x)*u;
-    end
+if options.scale
+    Lv = jacobian(v, t) + options.Tmax * jacobian(v,x)*u;
+else    
+    Lv = jacobian(v, t) + jacobian(v,x)*u;
 end
 [pL, consL, coeffL] = constraint_psatz(-Lv, Allcons, [t; x; u], d);
+
+
+
 
 objective = 0;
 
@@ -173,11 +166,7 @@ if sol.problem == 0
     
     %find the value function v(t,x) 
     v_rec = value(cv)' * mlist;
-    if options.time_indep
-        Lv_rec = jacobian(v_rec,x)*u;
-    else
-        Lv_rec = jacobian(v_rec, t) + jacobian(v_rec,x)*u;
-    end
+    Lv_rec = jacobian(v_rec, t) + jacobian(v_rec,x)*u;
     vval = polyval_func(v_rec, [t; x]);
     Lvval = polyval_func(Lv_rec, [t; x; u]);
     
