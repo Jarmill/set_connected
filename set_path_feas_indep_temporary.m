@@ -20,13 +20,26 @@ x_yalmip = options.x;
 n = length(x_yalmip);
 
 %% Start the variables and measures
-mpol('tT', 1, 1);
+
+%time (if applicable)
+if options.time_indep    
+    tT = [];
+    t = [];   
+else
+    mpol('tT', 1, 1);
+    mpol('t', 1, 1);
+end
+
+%state
 mpol('xT', n, 1);
+mpol('x', n, 1);
+
+%control
+mpol('u', n, 1);
+
+%measures
 muT = meas([tT; xT]);
 
-mpol('t', 1, 1);
-mpol('x', n, 1);
-mpol('u', n, 1);
 mu = meas([t; x; u]);
 
 
@@ -43,27 +56,43 @@ else
     U= 1 - u'*u >= 0;
 end
 
-if options.scale
-    supp_muT = [tT*(1-tT) >= 0; xT == options.X1];
-    supp_mu = [t*(1-t) >= 0; X; U];
-    scale_weight = options.Tmax;
-else
-    supp_muT = [tT*(options.Tmax-tT) >= 0; xT == options.X1];
-    supp_mu = [t*(options.Tmax-t) >= 0; X; U];
+if options.time_indep
     scale_weight = 1;
+    T = [];
+    TT = [];
+else
+    if options.scale
+        T = t * (1-t) >= 0;
+        scale_weight = options.Tmax;
+    else
+        T = t * (options.Tmax - t) >= 0;
+        scale_weight = 1;
+    end
+    
+    TT =subs(T, t, tT);
 end
+
+supp_muT = [TT; xT == options.X1];
+supp_mu  = [T; X; U];
 
 %moment constraints
 monT = mmon([tT; xT], d);
 mon  = mmon([t; x], d);
 
 yT = mom(monT);
-Ay = mom(diff(mon, x)*u) + mom(diff(mon, t));
+Ay = mom(diff(mon, x)*u);
+
+if ~options.time_indep
+    Ay = Ay + mom(diff(mon, t));
+end
        
-
-powers = genPowGlopti(n+1, d);
-y0 = prod(([0; options.X0]').^powers, 2);
-
+if options.time_indep        
+    powers = genPowGlopti(n, d);
+    y0 = prod(([options.X0]').^powers, 2);
+else
+    powers = genPowGlopti(n+1, d);
+    y0 = prod(([0; options.X0]').^powers, 2);    
+end
 
 Liou = yT - Ay - y0;
 
@@ -76,7 +105,7 @@ mom_con  = (Liou == 0);
 %Lp with p rational with lifting, but that is of subsidiary importance
 %would need additional measures to do L1
 if strcmp(options.objective, 'L2') || options.time_indep
-    objective = mom(sum(u.^2));
+    objective = min(mom(sum(u.^2)));
 else
     objective = min(mom(tT)*scale_weight);
 end
@@ -90,7 +119,7 @@ P = msdp(objective, ...
 
 [status,obj_rec, m,dual_rec]= msol(P);
 
-if options.scale
+if options.scale && ~options.time_indep
     mon_unscale = subs(mon, t, t/options.Tmax);
 else
     mon_unscale = mon;
