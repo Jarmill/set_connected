@@ -101,7 +101,7 @@ Acont_rhs = [];
 
 
 %moment substitution of absolute continuity condition
-SUBS = 1;
+SUBS = 0;
 
 for i = 1:n
     %liouville
@@ -110,7 +110,7 @@ for i = 1:n
     ts_curr = ts(i);
     xs_curr = xs(:, i);
 
-    Ay_sigma_curr = mom(2*diff(mon_i, xs(i, i)))*scale_weight;
+    Ay_sigma_curr = mom(2*diff(mon_i, xs(i, i))*scale_weight);
     Ay_sigma = Ay_sigma + Ay_sigma_curr;
     
     %absolute continuity
@@ -145,7 +145,7 @@ mom_con  = [Liou == 0; Acont == 0];
 
 
 %unsigned box formulation is incompatible with L1 norm
-if opt.time_indep
+if options.time_indep
     objective = min(0);
 else
     objective = min(mom(tT)*scale_weight);

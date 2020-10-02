@@ -128,7 +128,8 @@ else
         end
      end
 %     [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);
-    consT = (vT >= 0);
+%     consT = (vT >= 0);
+    consT = (vT  == 1);
     coeffT = [];
 end
 
@@ -188,7 +189,7 @@ if sol.problem == 0
         out.v0 = value(v0);
     end
     if ~set1
-        out.vT = value(vT);
+        out.v1 = value(vT);
     end
     
 elseif sol.problem == 1

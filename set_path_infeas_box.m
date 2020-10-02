@@ -191,7 +191,7 @@ if sol.problem == 0
         out.v0 = value(v0);
     end
     if ~set1
-        out.vT = value(vT);
+        out.v1 = value(vT);
     end
     
 else

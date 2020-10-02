@@ -20,7 +20,7 @@ if SOLVE
 %     order = 4;
 %     order = 5;
     d =2*order;
-    T = 2; %maximum time
+    T = 3; %maximum time
 
     FEAS = 1;
     SET = 0;

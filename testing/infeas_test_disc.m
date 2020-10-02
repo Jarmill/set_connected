@@ -16,12 +16,12 @@ if SOLVE
     opt.scale = 1;
 
 
-    order = 2;
+    order = 3;
     d =2*order;
     T = 3; %maximum time
 
     FEAS = 0;
-    SEP = 1;
+
     
     if FEAS
         opt.X0 = [1; -1];
@@ -32,20 +32,20 @@ if SOLVE
     end
 
     %constraint set
-    Rinner = 1.3;
+%     Rinner = 1.3;
 %     Rinner = 1;
     Router = 1.8;
     Absx = 0.5;
 
     x = opt.x;
     X = struct;
-    if ~SEP
+%     if ~SEP
         %annulus is connected
-        X.ineq = [x'*x - Rinner^2; Router^2 - x'*x];
-    else
-        %annulus is split
-        X.ineq = [x'*x - Rinner^2; Router^2 - x'*x; x(1)^2 - Absx^2];
-    end
+%         X.ineq = [x'*x - Rinner^2; Router^2 - x'*x];
+%     else
+        %disk is split
+        X.ineq = [Router^2 - x'*x; x(1)^2 - Absx^2];
+%     end
     X = fill_constraint(X);
     
     opt.box = 0;
@@ -60,24 +60,21 @@ if SOLVE
     
     BOX = 1;
     
-    %there is a bug in the box implementation
-    %FEAS = 0 should be infeasible, since the occupation measure must cross
-    %the gap
     if BOX
-        out = set_path_feas_box(opt, order);
+        out = set_path_infeas_box(opt, order);
     else
-        out = set_path_feas(opt, order);
+        out = set_path_infeas(opt, order);
     end
       
 end
 
-if DRAW && out.feas
+if DRAW && out.farkas
     figure(1)
     clf
     syms t [1 1]
     syms x [2 1]
 %     fy = f(x);
-    vy = out.vval(t, x);
+    vy = out.vval([t; x]);
 
     hold on
     xl = [-2, 2];
@@ -90,7 +87,7 @@ if DRAW && out.feas
     theta = linspace(0, 2*pi, N);
     circ = [cos(theta); sin(theta)];
     
-    plot(Rinner*circ(1, :), Rinner*circ(2, :), 'k', 'DisplayName','X')
+%     plot(Rinner*circ(1, :), Rinner*circ(2, :), 'k', 'DisplayName','X')
 %     fimplicit(x'*x == Rinner^2, [xl, yl], 'k', 'DisplayName','X')
 %     fimplicit(fy == 0, [xl, yl], 'DisplayName','X')
 
@@ -99,24 +96,44 @@ if DRAW && out.feas
     scatter(opt.X0(1),opt.X0(2), 100, 'ok', 'DisplayName', 'X0')
     scatter(opt.X1(1),opt.X1(2), 100, '*k', 'DisplayName', 'X1')
     
+%     vy0 = subs(vy, t, 0);
+%     fimplicit(vy0 == out.v0, [xl, yl], 'DisplayName','v(t,x) <= v(0, x0)')
+% 
+%     vyT = subs(vy, t, opt.Tmax);
+%     fimplicit(vyT == out.v1, [xl, yl], 'DisplayName','v(t, x) <= v(T, x1)')
+%     
+
+    epsilon = 1e-4;
     vy0 = subs(vy, t, 0);
-    fimplicit(vy0 == out.v0, [xl, yl], 'DisplayName','v(t,x) <= v(0, x0)')
+    color0 = [0.4940, 0.1840, 0.5560];
+    colorT = [0.4660, 0.6740, 0.1880];
+
+
+    fimplicit(vy0 == -1, [xl, yl], 'DisplayName','v(0, x) <= -1' ,'Color', color0)
+    fimplicit(vy0 == -epsilon, [xl, yl], ':', 'Color', color0, 'DisplayName','v(0, x) < 0')    
+
 
     vyT = subs(vy, t, opt.Tmax);
-    fimplicit(vyT == out.v1, [xl, yl], 'DisplayName','v(t, x) <= v(T, x1)')
+    fimplicit(vyT == 1, [xl, yl], 'DisplayName','v(T, x) >= 1', 'Color', colorT)
+    fimplicit(vyT == epsilon, [xl, yl], ':', 'Color', colorT, 'DisplayName','v(T, x) > 0')
+
     
 %     fimplicit(x'*x == Router^2, [xl, yl], 'k', 'HandleVisibility','off')\
-    plot(Router*circ(1, :), Router*circ(2, :), 'k', 'HandleVisibility','off')
-    plot(-Absx*[1,1], ylim, 'k', 'HandleVisibility','off')
-    plot(Absx*[1,1], ylim, 'k', 'HandleVisibility','off')
+    
+
+
+
+    plot(Router*circ(1, :), Router*circ(2, :), 'k', 'DisplayName','X')
+    plot(-Absx*[1,1], yl, 'k', 'HandleVisibility','off')
+    plot(Absx*[1,1], yl, 'k', 'HandleVisibility','off')
     
 %     fimplicit(x(1)^2 == Absx^2, [xl, yl], 'k', 'HandleVisibility','off')
     
-    plot(Absx*[-1, -1], yl, 'k')
+    
 
     legend('location', 'northwest')
     
-    title(['Path Feasibility Certificate: time=', num2str(-out.v0, 3)])
+    title(['Farkas Infeasibility Certificate')
     
     hold off
 end
