@@ -15,14 +15,14 @@ if SOLVE
 
     opt.scale = 0;
 
-        order = 2;
-%     order = 3;
+%         order = 2;
+    order = 3;
 %     order = 4;
 %     order = 5;
     d =2*order;
     T = 3; %maximum time
 
-    FEAS = 1;
+    FEAS = 0;
     SET = 0;
     if FEAS
         opt.X0 = [1.25; -1];
@@ -34,11 +34,19 @@ if SOLVE
     %         opt.X1.ineq = 0.05 - (opt.x(1) - 1.5)^2 + (opt.x(2)-0.5)^2;
             opt.X1 = [1.5; 0.5];
         else
-            opt.X0 = [-0.75; 0];
-%             opt.X0 = [-0.75; 0.5];
+            
+%             %     X0_infeas = [-0.75; 0];
+%             X0_infeas = [-0.75; 0.5];
+% %     X1_infeas = [1.5; 0.5];
+% %         X1_infeas = [1; 0.5];
+% %             X1_infeas = [1; -0.5];
+%             X1_infeas = [0.5; 0.75]; %needs order 4
+            
+%             opt.X0 = [-0.75; 0];
+            opt.X0 = [-0.75; 0.5];
 %             opt.X1 = [1.5; 0.5];
-            opt.X1 = [1; 0.5];
-%             opt.X1 = [1; -0.5];
+%             opt.X1 = [1; 0.5];
+            opt.X1 = [1; -0.5];
 %             opt.X1 = [0.5; 0.75]; %needs order 4
         end
     end
