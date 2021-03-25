@@ -55,4 +55,7 @@ for k = 1:dm
  pow{k} = vpow(k,:);
  coef{k} = 1;
 end
-y = struct('var',var,'pow',pow,'coef',coef);y = reduce(mpol(y));
+y = struct('var',var,'pow',pow,'coef',coef);
+y = reduce(mpol(y));
+
+% y = prod(((ones(length(vpow), 1) *x').^vpow)')';
