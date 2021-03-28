@@ -87,7 +87,8 @@ end
     %X0 is a point    
     set0 = false;
     v0 = replace(v, [t;x], [0; X0]);
-    cons0 = (v0 == 1);
+%     cons0 = (v0 == 1);
+    cons0 = (v0 -1 >= 0);
     coeff0 = [];    
 % end
 
@@ -114,7 +115,8 @@ end
         vT = replace(v, [t; x], [options.Tmax; X1]);
     end
 %     [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);
-    consT = (vT == -1);
+%     consT = (vT == -1);
+    consT = -vT -1>= 0; 
     coeffT = [];
 % end
 

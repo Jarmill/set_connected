@@ -1,0 +1,159 @@
+classdef infeas_manager
+    %INFEAS_MANAGER Summary of this class goes here
+    %   Detailed explanation goes here
+    
+    properties
+        options = [];
+        poly = struct('v', [], 'zeta', [], 'zeta_sum', []);        
+        
+        coeff = [];
+        cons = [];
+
+    end
+    
+    methods
+        function obj = infeas_manager(options)
+            %INFEAS_MANAGER Construct an instance of this class
+            %   Detailed explanation goes here
+            obj.options = options;
+        end
+        
+        function [poly_out, cc_out] = make_poly(obj,d)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+%             outputArg = obj.Property1 + inputArg;
+            [v, cv] = polynomial([t; x], d);
+
+            zeta = [];
+            coeff_zeta = [];
+            cons_zeta_sos = [];
+            zeta_sum = 0;
+            for i = 1:n
+                [pzeta, czeta] = polynomial([t; x], d);
+                coeff_zeta = [coeff_zeta; czeta];
+                cons_zeta_sos = [cons_zeta_sos; sos(pzeta)];
+
+                zeta = [zeta; pzeta];
+                zeta_sum = zeta_sum + pzeta;
+            end
+            
+            poly_out=struct('v', v, 'zeta', zeta, 'zeta_sum', zeta_sum);
+            coeff_out = [cv; coeff_zeta];
+            cons_out = cons_zeta_sos;
+            cc_out = coef_con(coeff_out, cons_out);
+        end
+        
+        function cc_all = make_cons(obj, d)
+            
+        end
+        
+        
+        %% constraint helper functions
+        
+        function X_prep = prep_space(obj, X)
+            %PREP_SPACE: Split up X into cells
+            if iscell(X)
+                %X is already a cell, nothing to be done
+                X_prep = X;
+            else
+                if isstruct(X)
+                    %wrap up the structure in a cell
+                    X_prep = {X};
+                else
+                    %X is supported at discrete points
+                    %split up array bu
+                end
+            end
+        end
+        
+        
+        function cc_init = con_init(obj, X0, d)
+            X0 = obj.options.X0;
+            t = obj.options.vars.t;
+            x = obj.options.vars.x;
+            v = obj.poly.v;
+            
+            %value function at (0, X0) is positive
+            if isstruct(X0)    
+                %X0 is a set                
+                X0 = fill_constraint(X0);
+                v0 = replace(v, t, 0);
+                [p0, cons0, coeff0] = constraint_psatz(v0 - 1, X0, x, d);
+            else
+%                 X0 is a point                    
+                v0 = replace(v, [t;x], [0; X0]);
+%                 cons0 = (v0 == 1);
+                cons0 = (v0 -1 >= 0);
+                coeff0 = [];    
+            end
+            
+            cc_init = coef_con(coeff0, cons0);                                    
+        end
+        
+        function cc_term = con_term(obj, X1, d)
+            %value function on (T, X1) is negative
+            if isstruct(X1)
+                %X1 is a set
+                set1 = true;
+                X1 = fill_constraint(X1);
+                if obj.options.scale
+                    vT = replace(v, t, t);
+                else
+                    vT = replace(v, t, obj.options.Tmax);
+                end
+
+                [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);        
+            else
+    %             X1 is a point                
+                if obj.options.scale
+                    vT = replace(v, [t; x], [1; X1]);
+                else
+                    vT = replace(v, [t; x], [obj.options.Tmax; X1]);
+                end
+                [pT, consT, coeffT] = constraint_psatz(vT, X1, x, d);
+%                 consT = (vT == -1);
+                consT = -vT -1>= 0; 
+                coeffT = [];
+            end
+            
+            cc_term = coef_con(coeffT, consT);
+        end
+        
+        function [cc_occ, cc_u] = con_occ(obj, X_region, d)
+            %value function v increases along all controlled trajectories
+            %therefore impossible for trajectories to go from X0 to X1
+            
+            if obj.options.scale
+                scale_weight = obj.options.Tmax;
+            else
+                scale_weight = 1;
+            end
+            
+            %occupation measure
+
+            Lv = jacobian(v, t) - scale_weight*jacobian(v,x)*ones(n, 1) - zeta_sum;
+
+            [pL, consL, coeffL] = constraint_psatz(Lv, X_region, [t; x], d);
+            
+            cc_occ = coef_con(coeffL, consL);
+            
+            %box measure
+            cons_u = [];
+            coeff_u = [];
+            for i = 1:n
+                term_ui = zeta(i) + scale_weight*2*jacobian(v,x(i));
+                [p_ui, cons_ui, coeff_ui] = constraint_psatz(term_ui, X_region, [t; x], d);
+
+                cons_u = [cons_u; cons_ui];
+                coeff_u = [coeff_u; coeff_ui];
+            end
+            
+            cc_u = coef_con(coeff_u, cons_u);
+        end
+        
+        
+        
+        
+    end
+end
+

@@ -42,6 +42,7 @@ classdef set_path_options < handle
         %% Variables and descriptors
         %variables defining sets (array of symbolic variables)
         x = [];
+        t = []; %time
         
         
         
