@@ -20,7 +20,27 @@ classdef infeas_manager
             end
         end
         
-        function [cc_all, poly_var]= make_program(obj, d)
+        %% program and recovery
+        
+        function out = infeas(obj, d)
+            [cc_all, poly_var, nonneg] = obj.make_program(d);
+            [sol, monom, Gram, residual] = solve_program(obj, cc_all);
+            
+            out = struct('farkas', ~sol.problem, 'poly', [], 'sol', [], 'block', [], 'func', []);
+            if sol.problem == 0
+                %the sets X0 and X1 are disconnected in time range [0, T]
+                [out.poly, out.func] = obj.recover_poly(poly_var, nonneg);
+                out.sol = sol;   
+                out.block = struct;
+                out.block.monom = monom;
+                out.block.Gram = Gram;
+                out.block.residual = residual;                            
+            end
+            %else: it is inconclusive whether the sets are disconnected
+            %out.farkas = 0 (default)
+        end
+        
+        function [cc_all, poly_var, nonneg]= make_program(obj, d)
             [poly_var, coeff_var] = obj.make_poly(d);
             
             nonneg = obj.form_nonneg(poly_var);
@@ -32,6 +52,60 @@ classdef infeas_manager
             
             cc_all = [cc_var; cc_cons];
         end
+        
+        function [sol, monom, Gram, residual] = solve_program(obj, cc_all)
+            %solve SOS program in YALMIP, return solution    
+            
+            opts = sdpsettings('solver', obj.options.solver);
+            opts.sos.model = 2;
+            
+            [sol, monom, Gram, residual] = solvesos(cc_all.con, 0, opts, cc_all.coef);
+        end
+        
+        function [poly_eval, func_eval] = recover_poly(obj, poly_var, nonneg)
+            %recover polynomials from computed disconnectedness certificate
+            t = poly_var.t;
+            x = poly_var.x;
+            n = length(poly_var.x);
+            
+            %solved coefficients of v and zeta
+            [cv,mv] = coefficients(poly_var.v,[poly_var.t; poly_var.x]);
+            v_eval = value(cv)'*mv;
+
+            [cz, mz] = coefficients(poly_var.zeta,[poly_var.t; poly_var.x]);
+            if n == 1
+                zeta_eval = value(cz)'*mz;
+            else
+                zeta_eval = value(cz)*mz;
+            end
+            
+            %evaluations of v at initial and terminal times
+            v0 = replace(v_eval, t, 0);            
+            
+            %terminal set
+            if obj.options.scale
+                v1 = replace(v_eval, t, 1);
+            else
+                v1 = replace(v_eval, t, obj.options.Tmax);
+            end
+                        
+            poly_eval = struct('v', v_eval, 'zeta', zeta_eval, 'v0', v0, 'v1', v1);
+            
+            % form functions using helper function 'polyval_func'
+            func_eval = struct;
+            func_eval.v = polyval_func(v_eval, [t; x]);
+            func_eval.zeta = polyval_func(zeta_eval, [t; x]);
+            
+            func_eval.v0 = polyval_func(v0, [x]);            
+            func_eval.v1 = polyval_func(v1, [x]);
+            
+            
+            
+            
+            
+            %TODO: function evaluations
+        end
+        
         
         %% variables
         function [poly_out, coeff_out] = make_poly(obj,d)
@@ -114,7 +188,8 @@ classdef infeas_manager
         end             
         
         function cc_curr = make_psatz(obj, d, X, f, vars)
-            %f >= 0 on X
+            %MAKE_PSATZ a positivestellensatz expression to impose that
+            %f(vars) >= 0 on the region X
             if isstruct(X)
                 %X1 is a set, nonnegativity of region
 %                 set1 = true;

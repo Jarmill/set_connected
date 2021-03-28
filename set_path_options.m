@@ -41,9 +41,9 @@ classdef set_path_options < handle
         
         %% Variables and descriptors
         %variables defining sets (array of symbolic variables)
-        x = [];
-        t = []; %time
         
+        t = []; %time
+        x = []; %state
         
         
         
@@ -61,7 +61,7 @@ classdef set_path_options < handle
         %   'circ':     u'u <= 1
         %   'box':      -1 <= ui <= 1
         %   'box_aff':  'box' with new measures
-        U = 'circ' 
+%         U = 'circ' 
         
         %Coordinate ranges for variables for scaling
         %state variables lie in a box (utils/box_process)

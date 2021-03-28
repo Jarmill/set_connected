@@ -20,19 +20,96 @@ classdef infeas_manager
             end
         end
         
-        function [obj] = make_program(obj, d)
-            [obj.poly, cc_poly] = obj.make_poly(d);
-            [cc_cons] = obj.make_cons(d);
+        %% program and recovery
+        
+        function out = infeas(obj, d)
+            [cc_all, poly_var, nonneg] = obj.make_program(d);
+            [sol, monom, Gram, residual] = solve_program(obj, cc_all);
             
-            
-            obj.cc = cc_poly.vertcat(cc_cons);
-            %solve yalmip
+            out = struct('farkas', ~sol.problem, 'poly', [], 'sol', [], 'block', []);
+            if sol.problem == 0
+                %the sets X0 and X1 are disconnected in time range [0, T]
+                out.poly = obj.recover_poly(poly_var, nonneg);
+                out.sol = sol;   
+                out.block = struct;
+                out.block.monom = monom;
+                out.block.Gram = Gram;
+                out.block.residual = residual;                            
+            end
+            %else: it is inconclusive whether the sets are disconnected
+            %out.farkas = 0 (default)
         end
         
+        function [cc_all, poly_var, nonneg]= make_program(obj, d)
+            [poly_var, coeff_var] = obj.make_poly(d);
+            
+            nonneg = obj.form_nonneg(poly_var);
+            
+            
+            [cc_cons] = obj.make_cons(d, nonneg);
+            
+            cc_var = coef_con(coeff_var, []);
+            
+            cc_all = [cc_var; cc_cons];
+        end
+        
+        function [sol, monom, Gram, residual] = solve_program(obj, cc_all)
+            %solve SOS program in YALMIP, return solution    
+            
+            opts = sdpsettings('solver', obj.options.solver);
+            opts.sos.model = 2;
+            
+            [sol, monom, Gram, residual] = solvesos(cc_all.con, 0, opts, cc_all.coef);
+        end
+        
+        function [poly_eval, func_eval] = recover_poly(obj, poly_var, nonneg)
+            %recover polynomials from computed disconnectedness certificate
+            t = poly_var.t;
+            x = poly_var.x;
+            n = length(poly_var.x);
+            
+            %solved coefficients of v and zeta
+            [cv,mv] = coefficients(poly_var.v,[poly_var.t; poly_var.x]);
+            v_eval = value(cv)'*mv;
+
+            [cz, mz] = coefficients(poly_var.zeta,[poly_var.t; poly_var.x]);
+            if n == 1
+                zeta_eval = value(cz)'*mz;
+            else
+                zeta_eval = value(cz)*mz;
+            end
+            
+            %evaluations of v at initial and terminal times
+            v0 = replace(v_eval, t, 0);            
+            
+            %terminal set
+            if obj.options.scale
+                v1 = replace(v_eval, t, 1);
+            else
+                v1 = replace(v_eval, t, obj.options.Tmax);
+            end
+                        
+            poly_eval = struct('v', v_eval, 'zeta', zeta_eval, 'v0', v0, 'v1', v1);
+            
+            % form functions using helper function 'polyval_func'
+            func_eval = struct;
+            func_eval.v = polyval_func(v_eval, [t; x]);
+            func_eval.zeta = polyval_func(zeta_eval, [t; x]);
+            
+            func_eval.v0 = polyval_func(v_eval, [t; x]);            
+            func_eval.v1 = polyval_func(v_eval, [t; x]);
+            
+            
+            
+            %TODO: function evaluations
+        end
+        
+        
+        %% variables
         function [poly_out, coeff_out] = make_poly(obj,d)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-%             outputArg = obj.Property1 + inputArg;
+            %MAKE_POLY Create polynomials v and zeta for disconnectedness
+            %certificate
+            
             t = obj.options.t;
             x = obj.options.x;
             [v, cv] = polynomial([t; x], d);
@@ -40,35 +117,28 @@ classdef infeas_manager
             n = length(x);
             
             zeta = [];
-%             coeff_zeta = [];
-%             cons_zeta_sos = [];
-%             zeta_sum = 0;
+            coeff_zeta = [];
             for i = 1:n
                 [pzeta, czeta] = polynomial([t; x], d);
-%                 coeff_zeta = [coeff_zeta; czeta];
-%                 cons_zeta_sos = [cons_zeta_sos; sos(pzeta)];
-
                 zeta = [zeta; pzeta];
-%                 zeta_sum = zeta_sum + pzeta;
+                coeff_zeta = [coeff_zeta; czeta];
             end
             
             poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x', x);
             coeff_out = [cv; coeff_zeta];
-%             cons_out = cons_zeta_sos;
-%             cc_out = coef_con(coeff_out, cons_out);
         end
         
         %% Constraints
         
         function nonneg = form_nonneg(obj, poly)
-            %FORM_NONNEG %create functions that should be nonnegative
+            %FORM_NONNEG create functions that should be nonnegative
             t = obj.options.t;
             x = obj.options.x;
             n = length(x);
             
             %polynomials
-            v = obj.poly.v;
-            zeta = obj.poly.zeta;
+            v = poly.v;
+            zeta = poly.zeta;
             zeta_sum = sum(zeta);
             
             %time-scaling
@@ -116,11 +186,12 @@ classdef infeas_manager
         end             
         
         function cc_curr = make_psatz(obj, d, X, f, vars)
-            %f >= 0 on X
-            if isstruct(X1)
+            %MAKE_PSATZ a positivestellensatz expression to impose that
+            %f(vars) >= 0 on the region X
+            if isstruct(X)
                 %X1 is a set, nonnegativity of region
 %                 set1 = true;
-                X1 = fill_constraint(X1);
+                X = fill_constraint(X);
 
                 [p, cons, coeff] = constraint_psatz(f, X, vars, d);        
             else  
@@ -173,23 +244,32 @@ classdef infeas_manager
             cc_slack = coef_con();
             for i = 1:length(X_cell)
                 X_curr = X_cell{i};
-                X_curr.ineq = [Tsupp; X_curr];
+                X_curr.ineq = [Tsupp; X_curr.ineq];
                 
                 %occupation
                 cc_occ_curr = obj.make_psatz(d, X_curr, nonneg.occ, [t; x]);
                 cc_occ = [cc_occ; cc_occ_curr];
                 
-                %box 
+                
                 for j = 1:n
+                    %box 
                     cc_u_curr = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
                     cc_u = [cc_u; cc_u_curr];
+                    
+                    %complement
+                    cc_slack_curr = obj.make_psatz(d, X_curr, nonneg.slack(j), [t; x]);
+                    cc_slack = [cc_slack; cc_slack_curr];
                 end
                 
-                %
+                
             end    
             
             %pack everything up
-            cc_all = [cc_init; cc_term; cc_occ; cc_u];
+%             cc_all = [cc_init; cc_term; cc_occ; cc_u; cc_slack];
+            cc_all = [cc_init; cc_term];
+            cc_all = [cc_all; cc_occ];
+            cc_all = [cc_all; cc_u];
+            cc_all = [cc_all; cc_slack];
             
         end
         
@@ -212,8 +292,8 @@ classdef infeas_manager
                         X_cell = {X};
                     else
                         Xt = X';
-                        Xt_cell = mat2cell(Xt', ones(size(Xt, 2), 1));
-                        X_cell = cellfun(@(x) x', Xt_cell);
+                        Xt_cell = mat2cell(Xt, ones(size(X, 2), 1));
+                        X_cell = cellfun(@(x) x', Xt_cell, 'UniformOutput', false);
                     end
                 end
             end
