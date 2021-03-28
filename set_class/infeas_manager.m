@@ -4,7 +4,7 @@ classdef infeas_manager
     
     properties
         options = [];
-        poly = struct('v', [], 'zeta', [], 'zeta_sum', []);        
+        poly = struct('v', [], 'zeta', []);        
         
         cc = coef_con([], []);
 
@@ -20,19 +20,24 @@ classdef infeas_manager
             end
         end
         
-        function [obj] = make_program(obj, d)
-            [obj.poly, cc_poly] = obj.make_poly(d);
-            [cc_cons] = obj.make_cons(d);
+        function [cc_all, poly_var]= make_program(obj, d)
+            [poly_var, coeff_var] = obj.make_poly(d);
+            
+            nonneg = obj.form_nonneg(poly_var);
             
             
-            obj.cc = cc_poly.append(cc_cons);
-            %solve yalmip
+            [cc_cons] = obj.make_cons(d, nonneg);
+            
+            cc_var = coef_con(coeff_var, []);
+            
+            cc_all = [cc_var; cc_cons];
         end
         
-        function [poly_out, cc_out] = make_poly(obj,d)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-%             outputArg = obj.Property1 + inputArg;
+        %% variables
+        function [poly_out, coeff_out] = make_poly(obj,d)
+            %MAKE_POLY Create polynomials v and zeta for disconnectedness
+            %certificate
+            
             t = obj.options.t;
             x = obj.options.x;
             [v, cv] = polynomial([t; x], d);
@@ -41,55 +46,157 @@ classdef infeas_manager
             
             zeta = [];
             coeff_zeta = [];
-            cons_zeta_sos = [];
-            zeta_sum = 0;
             for i = 1:n
                 [pzeta, czeta] = polynomial([t; x], d);
-                coeff_zeta = [coeff_zeta; czeta];
-                cons_zeta_sos = [cons_zeta_sos; sos(pzeta)];
-
                 zeta = [zeta; pzeta];
-                zeta_sum = zeta_sum + pzeta;
+                coeff_zeta = [coeff_zeta; czeta];
             end
             
-            poly_out=struct('v', v, 'zeta', zeta, 'zeta_sum', zeta_sum, 't', t, 'x', x);
+            poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x', x);
             coeff_out = [cv; coeff_zeta];
-            cons_out = cons_zeta_sos;
-            cc_out = coef_con(coeff_out, cons_out);
         end
+        
+        %% Constraints
         
         function nonneg = form_nonneg(obj, poly)
-            %FORM_NONNEG %create functions that should be nonnegative
+            %FORM_NONNEG create functions that should be nonnegative
+            t = obj.options.t;
+            x = obj.options.x;
+            n = length(x);
+            
+            %polynomials
+            v = poly.v;
+            zeta = poly.zeta;
+            zeta_sum = sum(zeta);
+            
+            %time-scaling
+            if obj.options.scale
+                scale_weight = obj.options.Tmax;
+            else
+                scale_weight = 1;
+            end
+            
+            nonneg = struct('init', [], 'term', [], 'occ', [], 'u', [], 'slack', []);
+            %init:      initial measure
+            %term:      terminal measure
+            %occ:       occupation measure
+            %u:         box-input occupation measure
+            %slack:     box-input complement occupation measure (abs. cont.)            
             
             
-            nonneg = struct('init', [], 'term', [], 'occ', [], 'u', []);
+            %TODO: make sensible choices of signs
             
+            %initial set
+            v0 = replace(v, t, 0);
+            nonneg.init = v0 - 1; %v0 >= 1
+            
+            %terminal set
+            if obj.options.scale
+                vT = replace(v, t, 1);
+            else
+                vT = replace(v, t, obj.options.Tmax);
+            end
+            nonneg.term = -vT - 1; %vT <= -1
+            
+            %occupation measures
+            Lv = jacobian(v, t) - scale_weight*jacobian(v,x)*ones(n, 1) - zeta_sum;
+            nonneg.occ = Lv; %Lv >= 0
+            
+            %box-input measures
+            term_ui = [];
+            for i = 1:n
+                term_ui = [term_ui; zeta(i) + scale_weight*2*jacobian(v,x(i))];                
+            end            
+            
+            nonneg.u = term_ui;     
+            
+            nonneg.slack = zeta;
+        end             
+        
+        function cc_curr = make_psatz(obj, d, X, f, vars)
+            %f >= 0 on X
+            if isstruct(X)
+                %X1 is a set, nonnegativity of region
+%                 set1 = true;
+                X = fill_constraint(X);
+
+                [p, cons, coeff] = constraint_psatz(f, X, vars, d);        
+            else  
+                %X is a point, nonnegativity of evaluation
+                f_pt = replace(f, vars, X);
+                cons = f_pt>= 0; 
+                coeff = [];
+            end
+            
+            cc_curr = coef_con(coeff, cons);
         end
         
-        function cc_all = make_cons(obj, d)
+        function cc_all = make_cons(obj, d, nonneg)
             %make constraints for set disconnectedness program
             
+            %sets
             X0_cell = obj.prep_space_cell(obj.options.X0);
             X1_cell = obj.prep_space_cell(obj.options.X1);
             X_cell  = obj.prep_space_cell(obj.options.X);            
             
-            cc_all = coef_con([], []);
-            
+            %variables           
+            t = obj.options.t;
+            x = obj.options.x;
+            n = length(x);                                    
+           
+            %initial set
+            cc_init = coef_con();
             for i = 1:length(X0_cell)
-                cc_init_curr = obj.con_init(X0_cell{i}, d);
-                cc_all = cc_all.append(cc_init_curr);
+                cc_init_curr = obj.make_psatz(d, X0_cell{i}, nonneg.init, x);
+                cc_init = cc_init.vertcat(cc_init_curr);
             end
-            
+             
+            %terminal set
+            cc_term = coef_con();
             for i = 1:length(X1_cell)
-                cc_term_curr = obj.con_term(X1_cell{i}, d);
-                cc_all = cc_all.append(cc_term_curr);
+                cc_term_curr = obj.make_psatz(d, X1_cell{i}, nonneg.term, x);
+                cc_term = [cc_term; cc_term_curr];
             end
-            
-            for i = 1:length(X_cell)
-                [cc_occ_curr, cc_u_curr] = obj.con_occ(X_cell{i}, d);
-                cc_all = cc_all.append(cc_occ_curr);
-                cc_all = cc_all.append(cc_u_curr);
+             
+
+            %occupation measure (+box, complement)
+            if obj.options.scale
+                Tsupp = t*(1-t);
+            else
+                Tsupp = t*(obj.options.Tmax - t);
             end            
+            
+            cc_occ = coef_con();
+            cc_u = coef_con();
+            cc_slack = coef_con();
+            for i = 1:length(X_cell)
+                X_curr = X_cell{i};
+                X_curr.ineq = [Tsupp; X_curr.ineq];
+                
+                %occupation
+                cc_occ_curr = obj.make_psatz(d, X_curr, nonneg.occ, [t; x]);
+                cc_occ = [cc_occ; cc_occ_curr];
+                
+                
+                for j = 1:n
+                    %box 
+                    cc_u_curr = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
+                    cc_u = [cc_u; cc_u_curr];
+                    
+                    %complement
+                    cc_slack_curr = obj.make_psatz(d, X_curr, nonneg.slack(j), [t; x]);
+                    cc_slack = [cc_slack; cc_slack_curr];
+                end
+                
+                
+            end    
+            
+            %pack everything up
+%             cc_all = [cc_init; cc_term; cc_occ; cc_u; cc_slack];
+            cc_all = [cc_init; cc_term];
+            cc_all = [cc_all; cc_occ];
+            cc_all = [cc_all; cc_u];
+            cc_all = [cc_all; cc_slack];
             
         end
         
@@ -112,8 +219,8 @@ classdef infeas_manager
                         X_cell = {X};
                     else
                         Xt = X';
-                        Xt_cell = mat2cell(Xt', ones(size(Xt, 2), 1));
-                        X_cell = cellfun(@(x) x', Xt_cell);
+                        Xt_cell = mat2cell(Xt, ones(size(X, 2), 1));
+                        X_cell = cellfun(@(x) x', Xt_cell, 'UniformOutput', false);
                     end
                 end
             end

@@ -11,11 +11,15 @@ classdef coef_con
         function obj = coef_con(coef,con)
             %UNTITLED Construct an instance of this class
             %   Detailed explanation goes here
+            if nargin ==0
+                coef = [];
+                con = [];
+            end
             obj.coef = coef;
             obj.con = con;
         end
         
-        function obj = append(obj,cc)
+        function obj = vertcat(obj,cc)
             %Append another cc to the current cc (coef_con)
             %   Detailed explanation goes here
             obj.coef = [obj.coef; cc.coef];
