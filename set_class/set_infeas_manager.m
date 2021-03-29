@@ -1,5 +1,8 @@
-classdef infeas_manager
-    %INFEAS_MANAGER Summary of this class goes here
+classdef set_infeas_manager
+    %SET_INFEAS_MANAGER Provide a certificate that there does not exist a
+    %path between sets X0 and X1 remaining entirely within X
+    %assume control input has a maximum speed of 1 along each input
+    %channel, and that a maximum execution time of Tmax is assumed.
     %   Detailed explanation goes here
     
     properties
@@ -11,8 +14,8 @@ classdef infeas_manager
     end
     
     methods
-        function obj = infeas_manager(options)
-            %INFEAS_MANAGER Construct an instance of this class
+        function obj = set_infeas_manager(options)
+            %SET_INFEAS_MANAGER Construct an instance of this class
             %   Detailed explanation goes here
             obj.options = options;
             if isempty(obj.options.t)

@@ -1,5 +1,7 @@
-classdef infeas_manager
-    %INFEAS_MANAGER Summary of this class goes here
+classdef set_infeas_manager
+    %SET_INFEAS_MANAGER Provide a certificate that there does not exist a
+    %path between sets X0 and X1 remaining entirely within X
+    %assume control input is 
     %   Detailed explanation goes here
     
     properties
@@ -11,8 +13,8 @@ classdef infeas_manager
     end
     
     methods
-        function obj = infeas_manager(options)
-            %INFEAS_MANAGER Construct an instance of this class
+        function obj = set_infeas_manager(options)
+            %SET_INFEAS_MANAGER Construct an instance of this class
             %   Detailed explanation goes here
             obj.options = options;
             if isempty(obj.options.t)
@@ -26,10 +28,10 @@ classdef infeas_manager
             [cc_all, poly_var, nonneg] = obj.make_program(d);
             [sol, monom, Gram, residual] = solve_program(obj, cc_all);
             
-            out = struct('farkas', ~sol.problem, 'poly', [], 'sol', [], 'block', []);
+            out = struct('farkas', ~sol.problem, 'poly', [], 'sol', [], 'block', [], 'func', []);
             if sol.problem == 0
                 %the sets X0 and X1 are disconnected in time range [0, T]
-                out.poly = obj.recover_poly(poly_var, nonneg);
+                [out.poly, out.func] = obj.recover_poly(poly_var, nonneg);
                 out.sol = sol;   
                 out.block = struct;
                 out.block.monom = monom;
@@ -96,8 +98,10 @@ classdef infeas_manager
             func_eval.v = polyval_func(v_eval, [t; x]);
             func_eval.zeta = polyval_func(zeta_eval, [t; x]);
             
-            func_eval.v0 = polyval_func(v_eval, [t; x]);            
-            func_eval.v1 = polyval_func(v_eval, [t; x]);
+            func_eval.v0 = polyval_func(v0, [x]);            
+            func_eval.v1 = polyval_func(v1, [x]);
+            
+            
             
             
             
