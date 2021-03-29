@@ -79,7 +79,7 @@ classdef lobe_plotter
             
             %contours of separation
             fimplicit(obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(obj.func.v1 == -1, limits,'DisplayName','v(T, x) = -1', 'Color', obj.color1)
+            fimplicit(obj.func.v1 == 0, limits,'DisplayName','v(T, x) = -1', 'Color', obj.color1)
     
             
             legend('location', 'northwest')
@@ -87,7 +87,7 @@ classdef lobe_plotter
             title('Certificate of Disconnectedness', 'FontSize', obj.FS_title)
             xlabel('x_1')
             ylabel('x_2')
-            view(3)
+%             view(3)
             hold off                        
         end
         

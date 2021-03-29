@@ -45,7 +45,7 @@ classdef set_path_options < handle
         t = []; %time
         x = []; %state
         
-        
+        verbose = 0; %solver output: https://yalmip.github.io/faq/runinsilent/
         
         %% support sets
         %type @mpol/supcon

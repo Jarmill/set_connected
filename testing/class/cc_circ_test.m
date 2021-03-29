@@ -1,4 +1,4 @@
-SOLVE = 0;
+SOLVE = 1;
 PLOT = 1;
 
 
