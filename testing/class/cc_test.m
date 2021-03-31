@@ -1,7 +1,7 @@
 SOLVE = 1;
 PLOT = 1;
 
-FEAS = 1;
+FEAS = 0;
 
 opt = set_path_options;
 

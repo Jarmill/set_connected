@@ -24,21 +24,22 @@ classdef set_manager
         
         %% program and recovery
         
-        function out = climb_connected(obj, d_range)
+        function out = climb_connected(obj, order_range)
             %meta-algorithm: increase degree between d_range(1):d_range(2)
             
+            
             if nargin == 1
-                d_range = [1; 5];
+                order_range = [1; 5];
             end
             
-            if length(d_range) == 1
-                d_range = [1; d];
+            if length(order_range) == 1
+                order_range = [1; d];
             end
-            
+            d_range = 2*order_range;
             
             for d_curr = d_range(1):d_range(2)
                 out = obj.check_connected(d_curr);
-                fprintf('degree=%d, \t status=%s\n', d_curr, char(out.status))
+                fprintf('order=%d, \t status=%s\n', d_curr/2, char(out.status))
                 if (out.status ~= conn_status.Indeterminate)
                     break
                 end
@@ -94,8 +95,11 @@ classdef set_manager
             cc_all_infeas = [cc_var_infeas; cc_infeas];
             cc_all_feas = [cc_var_feas; cc_feas];
             
+            
+%             feas_objective = -poly_var.gamma;
+            feas_objective = 0;
             prog_feas = struct('nonneg', nonneg_feas, 'poly', poly_var, ...
-                'objective', -poly_var.gamma, 'cc', cc_all_feas);
+                'objective', feas_objective, 'cc', cc_all_feas);
             prog_infeas = struct('nonneg', nonneg_infeas, 'poly', poly_var, ...
                 'objective', 0, 'cc', cc_all_infeas);
         end
