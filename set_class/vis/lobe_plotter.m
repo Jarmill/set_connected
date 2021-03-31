@@ -79,7 +79,7 @@ classdef lobe_plotter
             
             %contours of separation
             fimplicit(obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(obj.func.v1 == 0, limits,'DisplayName','v(T, x) = -1', 'Color', obj.color1)
+            fimplicit(obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
     
             
             legend('location', 'northwest')

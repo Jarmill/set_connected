@@ -20,7 +20,8 @@ inner_rad = 0.7;
 inner_x = 0.35;
 
 X_moon = struct;
-X_moon.ineq = [1 - opt.x(1)^2 - opt.x(2)^2; (opt.x(1)-inner_x)^2 + opt.x(2)^2 - inner_rad^2];
+X_moon.ineq = [1 - opt.x(1)^2 - opt.x(2)^2; 
+                (opt.x(1)-inner_x)^2 + opt.x(2)^2 - inner_rad^2];
 % X_moon = fill_constraint(X_moon);
 
 X = {X_moon};

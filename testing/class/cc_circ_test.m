@@ -43,13 +43,13 @@ opt.X0 = X0_circ;
 opt.X1 = X1_circ;
 
 if SOLVE
-IM = set_infeas_manager(opt);
-out = IM.infeas(d);
-out.farkas
+IM = set_manager(opt);
+out = IM.check_connected(d);
+% out.farkas
 end
 
 %TODO: write plotting code for ellipses
-if PLOT && out.farkas
+if PLOT &&  out.status == conn_status.Disconnected
     figure(1)
     clf
     syms tv [1 1];
@@ -58,16 +58,25 @@ if PLOT && out.farkas
     color0 = [0.4940, 0.1840, 0.5560];
     color1 = [0.4660, 0.6740, 0.1880];
     
-    v0 = out.func.v0(xv);
-    v1 = out.func.v1(xv);
+    v0 = out.infeas.func.v0(xv);
+    v1 = out.infeas.func.v1(xv);
     limits = [-1.5, 1.5, -0.6, 0.6];
     fimplicit(v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', color0)
-    fimplicit(v1 == -1, limits,'DisplayName','v(T, x) = -1', 'Color', color1)
+    fimplicit(v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', color1)
     viscircles(X0', R, 'color', 'k')
     viscircles(X1', R, 'color', 'k')
-    viscircles(X0', R0, 'color', 'k')
-    viscircles(X1', R0, 'color', 'k')
+    viscircles(X0', R0, 'LineStyle', '--', 'color', color0)
+    viscircles(X1', R0, 'LineStyle', '--', 'color', color1)
+    legend('location', 'south')
 %     lobe_plot = lobe_plotter(opt, out);
 %     lobe_plot.contour_2d();
 %     lobe_plot.contour_3d();
+
+figure(2)
+clf
+hold on
+v = out.infeas.func.v([tv; xv]);
+fimplicit3(v==0, [0, 2, limits], 'MeshDensity', 120);
+
+
 end

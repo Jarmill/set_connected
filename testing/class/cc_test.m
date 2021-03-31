@@ -18,15 +18,17 @@ opt.scale = 0;
 X0_feas = [1.25; -1];
 X1_feas = [1.5; 0.5];
 
-X_bump =full(sparse([1 2], [1 3], [-0.2, -0.2]));
-X_bump = 0.2*[-1 0 0 -1 ;
-              0  0 -1 -1];
+% X_bump =full(sparse([1 2], [1 3], [-0.2, -0.2]));
+% X_bump = 0.2*[-1 0 0 -1 ;
+%               0  0 -1 -1];
 
+X_bump = 0.2*[0 0 0 -1 -1 -1;
+              0 -1 -2 0 -1 -2];
 % X_bump = 0.2*[0 0 0 -1 -1 -1 -2 -2 -2;
 %               0 -1 -2 0 -1 -2 0 -1 -2];
-          
+%           
 % X0_infeas = [-0.75; 0.5];
-X0_infeas = [-0.75; 0.5]+ X_bump;
+X0_infeas = [-0.75; 0.3]+ X_bump;
 % X0_infeas = [1.3; 0.9]; %quite feasible
 
 %points
@@ -49,7 +51,8 @@ else
     opt.X1 = X1_infeas;
 end
 % opt.verbose = 1;
-d_range = [1, 4];
+% d_range = [2, 4];
+d_range = [3, 5];
 
 if SOLVE
 IM = set_manager(opt);
@@ -60,5 +63,5 @@ end
 if PLOT && out.status == conn_status.Disconnected
     lobe_plot = lobe_plotter(opt, out.infeas);
     lobe_plot.contour_2d();
-%     lobe_plot.contour_3d();
+    lobe_plot.contour_3d();
 end
