@@ -96,8 +96,8 @@ classdef set_manager
             cc_all_feas = [cc_var_feas; cc_feas];
             
             
-%             feas_objective = -poly_var.gamma;
-            feas_objective = 0;
+            feas_objective = -poly_var.gamma;
+%             feas_objective = 0;
             prog_feas = struct('nonneg', nonneg_feas, 'poly', poly_var, ...
                 'objective', feas_objective, 'cc', cc_all_feas);
             prog_infeas = struct('nonneg', nonneg_infeas, 'poly', poly_var, ...
@@ -252,7 +252,7 @@ classdef set_manager
             nonneg_infeas = nonneg;            
             nonneg_feas = nonneg;
             nonneg_feas.init = v0 - poly.gamma;
-%             nonneg_feas.term = t - vT;
+%             nonneg_feas.term = t - vT; %minimum time control
         end    
         
         
@@ -369,7 +369,10 @@ classdef set_manager
             %PREP_SPACE_CELL: Split up X into cells
             if iscell(X)
                 %X is already a cell, nothing to be done
-                X_cell = X;
+                X_cell = cell(length(X), 1);
+                for i = 1:length(X)
+                    X_cell{i} = fill_constraint(X{i});
+                end
             else
                 if isstruct(X)
                     %wrap up the structure in a cell

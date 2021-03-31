@@ -1,12 +1,15 @@
-classdef lobe_plotter
-    %LOBE_PLOTTER Visualization of Double-Lobe system
+classdef bicuspid_plotter
+    %BICUSPID_PLOTTER Visualization of bicuspid system with circles
     %for set (dis)-connectedness
     
     properties
         FS_axis = 14;       %font size of axis
         FS_title = 16;      %font size of title
         
-        f; %single set X
+        a =1; %parameter of bicuspid
+        %other circles
+        circle_center = [];
+        circle_rad = [];
         
         out = [];
         opt = [];
@@ -20,8 +23,8 @@ classdef lobe_plotter
     end
     
     methods
-        function obj = lobe_plotter(opt, out)
-            %LOBE_PLOTTER Construct an instance of this class
+        function obj = bicuspid_plotter(opt, out)
+            %BICUSPID_PLOTTER Construct an instance of this class
             %   Detailed explanation goes here
             
             
@@ -41,8 +44,11 @@ classdef lobe_plotter
             
             %symbolic evaluation only for the double-lobe
             %for plotting contours
-            f_func = polyval_func(opt.X.ineq, opt.x);
-            obj.func.X = f_func(xv);
+%             f_func = polyval_func(opt.X.ineq, opt.x);
+%             obj.func.X = f_func(xv);
+            %bicuspid
+            f_func = @(x, y) -(x.^2-obj.a^2)*(x-obj.a).^2 - (y.^2-obj.a^2).^2;
+            obj.func.X = f_func(xv(1), xv(2));
             obj.func.v0= out.func.v0(xv);
             obj.func.v1= out.func.v1(xv);
             obj.func.v= out.func.v([tv; xv]);
@@ -59,6 +65,28 @@ classdef lobe_plotter
         end
                
         
+        function F = set_plot(obj)
+            F = figure(9);
+            clf
+            hold on
+            
+            limits = [obj.axlim.x, obj.axlim.y];
+
+     
+            
+            fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
+            
+            %circles go here
+            
+            title('Bicuspid set to analyze', 'FontSize', obj.FS_title)
+            xlabel('x_1')
+            ylabel('x_2')
+            xlim(obj.axlim.x);
+            ylim(obj.axlim.y);
+%             view(3)
+            hold off        
+        end
+        
         function F = contour_2d(obj)
             %CONTOUR_2D Plot the double lobe and certificate in 2d
             %   Detailed explanation goes here
@@ -72,6 +100,7 @@ classdef lobe_plotter
             ylim(obj.axlim.y);
     
             %initial and final locations
+            %only if points (correct this later)
             scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
             scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
 

@@ -8,7 +8,7 @@ opt = set_path_options;
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
 opt.Tmax = 2;
-
+% opt.verbose = 1;
 
 opt.scale = 0;
 

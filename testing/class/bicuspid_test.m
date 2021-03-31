@@ -1,4 +1,4 @@
-SOLVE = 1;
+SOLVE = 0;
 PLOT = 1;
 
 FEAS = 1;
@@ -41,6 +41,11 @@ if SOLVE
 IM = set_manager(opt);
 % out = IM.check_connected(d);
 out = IM.climb_connected(order_range);
+end
+
+if PLOT
+    bplot = bicuspid_plotter(opt, out.feas);
+    bplot.set_plot();
 end
 
 % if PLOT && out.status == conn_status.Disconnected
