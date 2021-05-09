@@ -9,7 +9,7 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 2;
+opt.Tmax = 4;
 
 
 opt.scale = 0;
@@ -27,17 +27,34 @@ X_moon.ineq = [1 - opt.x(1)^2 - opt.x(2)^2;
 X = {X_moon};
 
 %circles
-% circle_rad = [0.4];
-% circle_center = [0.4, 0]';
+MULTIPLE_CIRCLES = 1;
+
+if MULTIPLE_CIRCLES
+%     circle_rad = [0.4; 0.3; 0.3];
+%     circle_center = [0.4, 0;
+%                  -1, 1;
+%                  -1, -1]';
+
+    circle_rad = [0.4; 0.3];
+circle_center = [0.4, 0;
+                 -1, 1]';
+
+else    
+    circle_rad = [0.4];
+    circle_center = [0.4, 0]';
+end
+
+
+
 
 % circle_rad = [0.4; 0.3; 0.3];
 % circle_center = [0.4, 0;
 %                  -1, 1;
 %                  -1, -1]';
 
-circle_rad = [1; 1]*0.3;
-circle_center = [-1, 1;
-                 -1, -1]';
+% circle_rad = [1; 1]*0.3;
+% circle_center = [-1, 1;
+%                  -1, -1]';
 
 X = {};
 % X_circ = {};
@@ -53,9 +70,18 @@ end
 X0_feas = [0; 0.9];
 X1_feas = [0; -0.9];
 
-X0_infeas = [-1; 1];
+X0_infeas = [0 0 0.7 0.7 -0.8; 0.8 -0.8 0.65 -0.65 0 ];
 % X1_infeas = [0.4; 0];
-X1_infeas = [-1; -1];
+X1_infeas = [0.4 0.4 0.4 0.15 ; 0 0.25 -0.25 0];
+
+if MULTIPLE_CIRCLES
+%     X1_infeas = [X1_infeas, [-1 -1; -1 1]];
+X1_infeas = [X1_infeas, [-1; 1]];
+    
+end
+
+
+% X1_infeas = [-1; -1];
 
 opt.X = X;
 if FEAS
@@ -70,16 +96,19 @@ order_range = [1, 4];
 
 if SOLVE
 IM = set_manager(opt);
-% out = IM.check_connected(d);
-out = IM.climb_connected(order_range);
+order = 4;
+d = 2*order;
+out = IM.check_connected(d);
+% out = IM.climb_connected(order_range);
 end
 
 if PLOT
-    bplot = moon_plotter(opt, out.feas);
+    bplot = moon_plotter(opt, out);
     bplot.inner_x = inner_x;
     bplot.inner_rad = inner_rad;
     bplot.circle = struct('center', circle_center, 'rad', circle_rad);
-    bplot.set_plot();
+%     bplot.set_plot();
+    bplot.contour_2d();
 end
 
 % if PLOT && out.status == conn_status.Disconnected

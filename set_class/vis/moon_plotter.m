@@ -39,11 +39,27 @@ classdef moon_plotter
                 obj.out = out;
             end
             
+            
+            
             %variables
             syms tv [1 1];
             syms xv [2 1];
             obj.t = tv;
             obj.x = xv;
+            
+            
+            %plot axes
+            obj.axlim.x= [-3, 2.5];
+            obj.axlim.y= [-2, 2];
+            if obj.opt.scale
+                obj.axlim.t = [0, 1];
+            else
+                obj.axlim.t = [0, obj.opt.Tmax];
+            end
+            
+            if out.problem
+                return
+            end
             
             %symbolic evaluation only for the double-lobe
             %for plotting contours
@@ -57,14 +73,6 @@ classdef moon_plotter
             obj.func.v= out.func.v([tv; xv]);
             obj.func.zeta= out.func.zeta([tv; xv]);
             
-            %plot axes
-            obj.axlim.x= [-3, 2.5];
-            obj.axlim.y= [-2, 2];
-            if obj.opt.scale
-                obj.axlim.t = [0, 1];
-            else
-                obj.axlim.t = [0, obj.opt.Tmax];
-            end
         end
                
         
@@ -90,21 +98,23 @@ classdef moon_plotter
             x_moon = [x_outer_filter, x_inner_filter(:, end:-1:1), x_outer_filter(:, 1)];                                    
         end
         
-        function F = set_plot(obj)
+        function [F, a] = set_plot(obj)
             F = figure(9);
             clf
+            a = axes;
             hold on
+            
             
             limits = [obj.axlim.x, obj.axlim.y];
 
             [x_circ, x_moon] = obj.moon_profile(obj.inner_x, obj.inner_rad);
-            plot(x_moon(1, :), x_moon(2, :), 'k')
+            plot(x_moon(1, :), x_moon(2, :), 'k', 'DisplayName', 'X')
             
             for i = 1:length(obj.circle.rad)
                 rx = obj.circle.rad(i);
                 cx = obj.circle.center(:, i);
                 x_circ_curr = rx*x_circ + cx;
-                plot(x_circ_curr(1, :), x_circ_curr(2, :), 'k')
+                plot(x_circ_curr(1, :), x_circ_curr(2, :), 'k', 'HandleVisibility', 'off')
             end
 %             fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
             
@@ -126,25 +136,29 @@ classdef moon_plotter
         function F = contour_2d(obj)
             %CONTOUR_2D Plot the double lobe and certificate in 2d
             %   Detailed explanation goes here
-            F = figure(10);
-            clf
-            hold on
-            
+%             F = figure(10);
+%             clf
+%             hold on
+
+            [F, a] = obj.set_plot();
+%             a = axes;
             %axis limits
+            
             limits = [obj.axlim.x, obj.axlim.y];
-            xlim(obj.axlim.x);
-            ylim(obj.axlim.y);
+%             xlim(obj.axlim.x);
+%             ylim(obj.axlim.y);
     
             %initial and final locations
             %only if points (correct this later)
-            scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
-            scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
+%             scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
+%             scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
 
-            fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
+%             fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
             
             %contours of separation
-            fimplicit(obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(obj.func.v1 == 0, limits,'DisplayName','v(T, x) = -1', 'Color', obj.color1)
+            hold on
+            fimplicit(a, obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
+            fimplicit(a, obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
     
             
             legend('location', 'northwest')

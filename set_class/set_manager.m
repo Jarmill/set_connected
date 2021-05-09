@@ -45,61 +45,71 @@ classdef set_manager
                 end
             end
             
-%             while (status == conn_status.Indeterminate) && (d_curr < dmax)
-%                 out = obj.check_connected(d_curr);
-%                 d_curr = d_curr + 1;
-%             end
         end
         
         function out = check_connected(obj, d)
-%             [cc_all, poly_var, nonneg] = obj.make_program(d);
-            [prog_infeas, prog_feas] = obj.make_program(d);
+
+            %the previously described 'prog_feas' feasibility program is an
+            %outer approximation of the minimum time control, and is a 
+            % misnomer. This program will return a time bound of Inf if the
+            % two sets are disconnected. Other types of programs are
+            % required to certify feasibility (density?)
+            
+            prog_infeas = obj.make_program(d);
             out_infeas = solve_program(obj, prog_infeas);
             farkas= ~out_infeas.problem;
             if farkas
-                out_feas = struct('');
-                connected = 0;
-            else
-                out_feas = solve_program(obj, prog_feas);
-                connected = ~out_feas.problem;
-            end
-            
-            if farkas
+%                 out_feas = struct('');
                 status = conn_status.Disconnected;
-            elseif connected
-                status = conn_status.Connected;                
             else
-                status = conn_status.Indeterminate;
+                status = conn_status.Indeterminate;          
+                
+%                 connected = 0;
+%             else
+%                 out_feas = solve_program(obj, prog_feas);
+%                 connected = ~out_feas.problem;
             end
             
-            out = struct('status', status, 'infeas', out_infeas, 'feas', out_feas);
+%             if farkas
+%                 status = conn_status.Disconnected;
+%             elseif connected
+%                 status = conn_status.Connected;                
+%             else
+%                 status = conn_status.Indeterminate;
+%             end
             
+%             out = struct('status', status, 'infeas', out_infeas, 'feas', out_feas);
+%             out = struct('status', status, 'infeas', out_infeas);
+%             out = status;
+            out = out_infeas;
+            out.status = status;
 
             %else: it is inconclusive whether the sets are disconnected
             %out.farkas = 0 (default)
         end
         
-        function [prog_infeas, prog_feas]= make_program(obj, d)
+%         function [prog_infeas, prog_feas]= make_program(obj, d)
+        function [prog_infeas]= make_program(obj, d)
             [poly_var, coeff_var] = obj.make_poly(d);
             
             [nonneg_infeas, nonneg_feas] = obj.form_nonneg(poly_var);
             
             
             [cc_infeas] = obj.make_cons(d, nonneg_infeas);
-            [cc_feas] = obj.make_cons(d, nonneg_feas);
+%             [cc_feas] = obj.make_cons(d, nonneg_feas);
             
             
             cc_var_infeas = coef_con(coeff_var, []);
-            cc_var_feas = coef_con([poly_var.gamma; coeff_var], []);
+%             cc_var_feas = coef_con([poly_var.gamma; coeff_var], []);
             
             cc_all_infeas = [cc_var_infeas; cc_infeas];
-            cc_all_feas = [cc_var_feas; cc_feas];
+%             cc_all_feas = [cc_var_feas; cc_feas];
             
-            
-            feas_objective = -poly_var.gamma;
+%             
+%             feas_objective = -poly_var.gamma;
 %             feas_objective = 0;
-            prog_feas = struct('nonneg', nonneg_feas, 'poly', poly_var, ...
-                'objective', feas_objective, 'cc', cc_all_feas);
+%             prog_feas = struct('nonneg', nonneg_feas, 'poly', poly_var, ...
+%                 'objective', feas_objective, 'cc', cc_all_feas);
             prog_infeas = struct('nonneg', nonneg_infeas, 'poly', poly_var, ...
                 'objective', 0, 'cc', cc_all_infeas);
         end
@@ -160,11 +170,7 @@ classdef set_manager
             
             func_eval.v0 = polyval_func(v0, [x]);            
             func_eval.v1 = polyval_func(v1, [x]);
-            
-            
-            
-            
-            
+                                                            
             %TODO: function evaluations
         end
         
@@ -195,7 +201,8 @@ classdef set_manager
         
         %% Constraints
         
-        function [nonneg_infeas, nonneg_feas] = form_nonneg(obj, poly)
+%         function [nonneg_infeas, nonneg_feas] = form_nonneg(obj, poly)
+        function [nonneg_infeas, nonneg] = form_nonneg(obj, poly)
             %FORM_NONNEG create functions that should be nonnegative
             t = obj.options.t;
             x = obj.options.x;
@@ -250,8 +257,8 @@ classdef set_manager
             nonneg.slack = zeta;
             
             nonneg_infeas = nonneg;            
-            nonneg_feas = nonneg;
-            nonneg_feas.init = v0 - poly.gamma;
+%             nonneg_feas = nonneg;
+%             nonneg_feas.init = v0 - poly.gamma;
 %             nonneg_feas.term = t - vT; %minimum time control
         end    
         
