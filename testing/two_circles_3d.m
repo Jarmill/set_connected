@@ -24,19 +24,27 @@ z_width = R/2;
 %small circle
 % X = struct('ineq', f, 'eq', []);
 
-epsilon = 0.25;
+epsilon = 0;
+
+CUT_SPACE = 1;
+
+if CUT_SPACE
+    space_ineq = [z_width^2 - opt.x(3)^2];
+else
+    space_ineq = [];
+end
 
 if epsilon == 0
-X_bot = struct('ineq', [], 'eq', [R^2 - opt.x(1)^2 - (opt.x(3) - z_width)^2; opt.x(2)]);
-X_top =struct('ineq', [], 'eq', [R^2 - opt.x(2)^2 - (opt.x(3) + z_width)^2; opt.x(1)]);
+X_bot = struct('ineq', space_ineq, 'eq', [R^2 - opt.x(1)^2 - (opt.x(3) - z_width)^2; opt.x(2)]);
+X_top =struct('ineq', space_ineq, 'eq', [R^2 - opt.x(2)^2 - (opt.x(3) + z_width)^2; opt.x(1)]);
 
 else
     %a thickening of inequality constraints
     term_bot = [R^2 - opt.x(1)^2 - (opt.x(3) - z_width)^2; opt.x(2)];
-    X_bot = struct('ineq', [term_bot + epsilon; epsilon - term_bot], 'eq',[]);
+    X_bot = struct('ineq', [space_ineq; term_bot + epsilon; epsilon - term_bot], 'eq',[]);
     
     term_top = [R^2 - opt.x(2)^2 - (opt.x(3) + z_width)^2; opt.x(1)];
-    X_top = struct('ineq', [term_top + epsilon; epsilon - term_top], 'eq',[]);
+    X_top = struct('ineq', [space_ineq; term_top + epsilon; epsilon - term_top], 'eq',[]);
     
 end
  X = {X_bot,
@@ -66,7 +74,7 @@ end
 % 
 % %TODO: write plotting code for ellipses
 if PLOT &&  out.status == conn_status.Disconnected
-    figure(1)
+    figure(2)
     clf
     syms tv [1 1];
     syms xv [3 1];

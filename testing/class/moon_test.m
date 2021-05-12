@@ -30,14 +30,14 @@ X = {X_moon};
 MULTIPLE_CIRCLES = 1;
 
 if MULTIPLE_CIRCLES
-%     circle_rad = [0.4; 0.3; 0.3];
-%     circle_center = [0.4, 0;
-%                  -1, 1;
-%                  -1, -1]';
+    circle_rad = [0.4; 0.3; 0.3];
+    circle_center = [0.4, 0;
+                 -1, 1;
+                 -1, -1]';
 
-    circle_rad = [0.4; 0.3];
-circle_center = [0.4, 0;
-                 -1, 1]';
+%     circle_rad = [0.4; 0.3];
+% circle_center = [0.4, 0;
+%                  -1, 1]';
 
 else    
     circle_rad = [0.4];
@@ -75,8 +75,8 @@ X0_infeas = [0 0 0.7 0.7 -0.8; 0.8 -0.8 0.65 -0.65 0 ];
 X1_infeas = [0.4 0.4 0.4 0.15 ; 0 0.25 -0.25 0];
 
 if MULTIPLE_CIRCLES
-%     X1_infeas = [X1_infeas, [-1 -1; -1 1]];
-X1_infeas = [X1_infeas, [-1; 1]];
+    X1_infeas = [X1_infeas, [-1 -1; -1 1]];
+% X1_infeas = [X1_infeas, [-1; 1]];
     
 end
 
@@ -96,7 +96,7 @@ order_range = [1, 4];
 
 if SOLVE
 IM = set_manager(opt);
-order = 4;
+order = 2;
 d = 2*order;
 out = IM.check_connected(d);
 % out = IM.climb_connected(order_range);

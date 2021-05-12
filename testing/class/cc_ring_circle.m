@@ -29,8 +29,8 @@ f2 = (R_ring_outer^2-x2);
 
 
 %% initial sets
-% X0 = [0.8; 0];
-% X1 = [0; 0];
+X0 = [0.8; 0];
+X1 = [0; 0];
 
 
 % X0 = [0.8 0.8; 0.0, 0.1];
@@ -44,8 +44,9 @@ POINTS1 = 1;
 
 if POINTS0
 % X0 = 0.8*circ;
-X0 = 0.9*circ + [0.05; 0.05];
+% X0 = 0.9*circ + [0.05; 0.05];
 % X0 = [0.8 -0.8; 0.0, 0.1];
+X0 = [0.8; 0.0];
 else
     
     R0 = 0.9;
@@ -99,6 +100,10 @@ if PLOT &&  out.status == conn_status.Disconnected
     color1 = [0.4660, 0.6740, 0.1880];
 %     
 
+th_fine = linspace(0, 2*pi, 200);
+    circ_fine = [cos(th_fine); sin(th_fine)];
+    
+
     color_int = 0.8*[1,1,1];
     patch(R_ring_outer*circ_fine(1, :), R_ring_outer*circ_fine(2, :), color_int, 'LineWidth', 3, 'DisplayName', 'X')
     patch(R_ring_inner*circ_fine(1, :), R_ring_inner*circ_fine(2, :), 'w', 'LineWidth', 3, 'HandleVisibility', 'off')
@@ -121,8 +126,6 @@ if PLOT &&  out.status == conn_status.Disconnected
     fimplicit(v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', color1, 'LineWidth', 3);
     
     
-    th_fine = linspace(0, 2*pi, 200);
-    circ_fine = [cos(th_fine); sin(th_fine)];
     
     
     

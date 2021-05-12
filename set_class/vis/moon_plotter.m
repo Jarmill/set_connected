@@ -196,6 +196,7 @@ classdef moon_plotter
                 plot3(obj.axlim.t, obj.opt.X1(1, i)*[1,1], obj.opt.X1(2, i)*[1,1], 'k', 'HandleVisibility', 'Off')
             end
             
+%             MD = 120;
             fimplicit3(obj.func.v == 0, limits, 'MeshDensity', 120)
             
             
