@@ -20,6 +20,9 @@ p_out = p;
 coeff_list = [];
 cons_mult = [];
 
+X = fill_constraint(X);
+
+
 %equalities
 for i = 1:length(X.eq)
     [seq, ceq] = polynomial(vars, d - max(0, degree(X.eq(i))));

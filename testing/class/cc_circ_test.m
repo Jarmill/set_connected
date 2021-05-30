@@ -22,7 +22,7 @@ R = 0.5; %circle radius
 R0 = 0.2;
 
 %small circle
-% X1_infeas.ineq  = 0.2^2 - sum((opt.x - [1.5; 0.5]).^2);
+% X1_ineq  = 0.2^2 - sum((opt.x - [1.5; 0.5]).^2);
 
 % f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
 % X.ineq = f(opt.x);
@@ -58,8 +58,8 @@ if PLOT &&  out.status == conn_status.Disconnected
     color0 = [0.4940, 0.1840, 0.5560];
     color1 = [0.4660, 0.6740, 0.1880];
     
-    v0 = out.infeas.func.v0(xv);
-    v1 = out.infeas.func.v1(xv);
+    v0 = out.func.v0(xv);
+    v1 = out.func.v1(xv);
     limits = [-1.5, 1.5, -0.6, 0.6];
     fimplicit(v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', color0)
     fimplicit(v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', color1)
@@ -75,7 +75,7 @@ if PLOT &&  out.status == conn_status.Disconnected
 figure(2)
 clf
 hold on
-v = out.infeas.func.v([tv; xv]);
+v = out.func.v([tv; xv]);
 fimplicit3(v==0, [0, 2, limits], 'MeshDensity', 120);
 
 

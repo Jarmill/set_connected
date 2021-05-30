@@ -61,7 +61,7 @@ out = IM.climb_connected(d_range);
 end
 
 if PLOT && out.status == conn_status.Disconnected
-    lobe_plot = lobe_plotter(opt, out.infeas);
+    lobe_plot = lobe_plotter(opt, out);
     lobe_plot.contour_2d();
     lobe_plot.contour_3d();
 end
