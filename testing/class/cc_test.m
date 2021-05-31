@@ -100,7 +100,7 @@ if PLOT && out.status == conn_status.Disconnected
     lobe_plot = lobe_plotter(opt, out, out_sim);
     lobe_plot.contour_2d();
     lobe_plot.v_plot();
-%     lobe_plot.v_plot();
+    lobe_plot.nonneg_traj();
     lobe_plot.nonneg_zeta();
 %     for i = 1:Np
 % %     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);

@@ -204,41 +204,34 @@ classdef lobe_plotter
             
             %no other switching present, so there is only one system for
             %the occupation measure
-            
-            if obj.out.func.FREE_TIME
-                ax_label= {'$-v(t,x)$', '$w(t,x) + v(t,x)-1$', '$w(t,x)$', '$-L_{f0} v(t,x) - b^T \zeta(t,x)$'};
-            else
-                ax_label= {'$-v(t,x)$', '$w(x) + v(T,x)-1$', '$w(x)$', '$-L_{f0} v(t,x) - b^T \zeta(t,x)$'};
-            end
+            Nzeta = length(obj.out.poly.zeta);
+           
+          
             ax_title = {'Nonpositive v (initial)', 'Reachability Indicator (terminal)', 'Reachability Indicator (terminal slack)', 'Decreasing v (occupation)'};
             
-            tiledlayout(4, 1);
-            for i = 1:4
+            tiledlayout(Nzeta+1, 1);
+            for i = 1:Nzeta+1
                 nexttile
                 hold on
-                
-                Nzeta = length(obj.out.poly.zeta);
-                
                 for j = 1:length(obj.out_sim)
                     osc = obj.out_sim{j};                    
-                    if i == 1
-                        plot(osc.t, osc.nonneg(1:(end-3-Nzeta), :), 'c');
-                    elseif i==2
-                        %TODO: Fix this so only t=1 is plotted
-                        plot(osc.t, osc.nonneg(end-2-Nzeta, :), 'c');
-                    elseif i==3
-                        plot(osc.t, osc.nonneg(end-1-Nzeta, :), 'c');
-                    else
-                        plot(osc.t, osc.nonneg(end-Nzeta, :), 'c');
-                    end
+                    plot(osc.t_traj, osc.nonneg(i, :), 'c');
                 end
+                
                 xlabel('time', 'FontSize', obj.FS_axis)
-                ylabel(ax_label{i}, 'interpreter', 'latex', 'FontSize', obj.FS_axis);
-                title(ax_title{i}, 'FontSize', obj.FS_title);   
                 plot(xlim, [0,0], 'k:')
+                
+                if i==1
+                    ylabel(['$\partial_t v - \nabla_x \cdot v -  1 \cdot \zeta_i$'], 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+                    title(['Decreasing v'],'FontSize', obj.FS_title);   
+                else
+                    si = num2str(i-1);
+                    ylabel(['$\zeta_', si, '+2 \nabla_x \cdot v$'], 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+                    title(['Input ', si, ' Bounding'],'FontSize', obj.FS_title);   
+                end
             end
-          end
-        
+         
+        end
     
     end
 end
