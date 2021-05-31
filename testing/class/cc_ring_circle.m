@@ -1,17 +1,18 @@
 SOLVE = 1;
 PLOT = 1;
+SAMPLE = 1;
 
 
 opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 3;
+opt.Tmax = 2;
 
 opt.scale = 0;
 opt.verbose = 1;
 
-order = 5;
+order = 4;
 d = 2*order;
 
 
@@ -22,9 +23,10 @@ R_ring_inner = 0.7;
 R_circ = 0.5;
 
 x2 = sum(opt.x.^2);
-% f = (R_ring_outer^2-x2)*(x2-R_ring_inner^2)*(R_circ^2-x2);
+f = (R_ring_outer^2-x2)*(x2-R_ring_inner^2)*(x2-R_circ^2);
 
-f1 = (x2-R_ring_inner^2)*(R_circ^2-x2);
+% f1 = -(x2-R_ring_inner^2)*(R_circ^2-x2);
+f1 = (x2-R_ring_inner^2)*(x2-R_circ^2);
 f2 = (R_ring_outer^2-x2);
 
 
@@ -39,14 +41,14 @@ Nth = 10;
 th = linspace(0, 2*pi, Nth);
 circ = [cos(th); sin(th)];
 
-POINTS0 = 0;
+POINTS0 = 1;
 POINTS1 = 1;
 
 if POINTS0
 % X0 = 0.8*circ;
 % X0 = 0.9*circ + [0.05; 0.05];
 % X0 = [0.8 -0.8; 0.0, 0.1];
-X0 = [0.8; 0.0];
+X0 = [0.0; 0.8];
 else
     
     R0 = 0.9;
@@ -55,14 +57,20 @@ else
 end
 
 if POINTS1
-X1 = [0 0.3; 0 0];
+% X1 = [0 0.3; 0 0];
+X1 = [0;0.0];
 end
 
 %small circle
 % X = struct('ineq', f, 'eq', []);
- X = struct('ineq', [f1; f2], 'eq', []);
+%  X = struct('ineq', [f1; f2], 'eq', []);
 
+X_in = struct('ineq', R_circ^2-x2, 'eq', []);
+X_out = struct('ineq', [(R_ring_outer^2-x2);(x2-R_ring_inner^2)], 'eq',[]);
 
+X = {X_in, X_out};
+%f1 = (x2-R_ring_inner^2)*(x2-R_circ^2);
+% f2 = (R_ring_outer^2-x2);
 % X1_infeas.ineq  = 0.2^2 - sum((opt.x - [1.5; 0.5]).^2);
 
 % f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
@@ -88,6 +96,30 @@ IM = set_manager(opt);
 out = IM.check_connected(d);
 % out.farkas
 end
+
+if SAMPLE
+%     Np = 100;
+    [test, X_out_func]=constraint_eval(X_out, opt.x, X0);
+    [test, X_in_func]=constraint_eval(X_in, opt.x, X0);
+    X_func = @(pt) X_out_func(pt) || X_in_func(pt);
+    
+    supp_func = @(t,x) support_event(t, x, X_func);
+    
+s_opt = set_sample_options;
+% x0 = @() [0;0];
+
+s_opt.x0 = @() X0;
+
+s_opt.Tmax = Tmax;
+s_opt.dt = 0.1;
+s_opt.X_func = supp_func;
+ 
+Np = 15;
+
+out_sim=set_walk(Np, s_opt);
+
+end
+
 % 
 % %TODO: write plotting code for ellipses
 if PLOT &&  out.status == conn_status.Disconnected
@@ -127,7 +159,10 @@ th_fine = linspace(0, 2*pi, 200);
     
     
     
-    
+    for i = 1:Np
+%     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
+        plot(out_sim{i}.x(1, :), out_sim{i}.x(2, :), 'k', 'HandleVisibility', 'off');
+    end
     
     
 

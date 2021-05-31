@@ -1,5 +1,8 @@
 SOLVE = 1;
-PLOT = 1;
+SAMPLE = 1;
+PLOT = 1 ;
+EVAL = 1;
+
 
 FEAS = 0;
 
@@ -8,9 +11,10 @@ opt = set_path_options;
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
 opt.Tmax = 2;
-% opt.verbose = 1;
+opt.verbose = 1;
 
-opt.scale = 0;
+opt.scale = 1;
+
 
 % order = 4;
 % d = 2*order;
@@ -60,8 +64,48 @@ IM = set_manager(opt);
 out = IM.climb_connected(d_range);
 end
 
+
+if SAMPLE
+    %     Np = 100;
+        [test, X_func]=constraint_eval(X, opt.x, X0_feas);
+
+        supp_func = @(t,x) support_event(t, x, X_func);
+
+    s_opt = set_sample_options;
+    % x0 = @() [0;0];
+
+    s_opt.x0 = @() opt.X0(:,randi( size(opt.X0, 2)));
+
+    s_opt.Tmax = opt.Tmax;
+    s_opt.dt = 0.05;
+    s_opt.X_func = supp_func;
+    s_opt.nonneg_func = out.func.nonneg;
+
+    Np = 50;
+
+    out_sim=set_walk(Np, s_opt);
+
+end
+
+
+if SAMPLE || EVAL
+   
+    
+    out_sim = set_traj_eval(out, out_sim);
+end
+
+
+
 if PLOT && out.status == conn_status.Disconnected
-    lobe_plot = lobe_plotter(opt, out);
+    lobe_plot = lobe_plotter(opt, out, out_sim);
     lobe_plot.contour_2d();
-    lobe_plot.contour_3d();
+    lobe_plot.v_plot();
+%     lobe_plot.v_plot();
+    lobe_plot.nonneg_zeta();
+%     for i = 1:Np
+% %     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
+%         plot(out_sim{i}.x(1, :), out_sim{i}.x(2, :), 'c', 'HandleVisibility', 'off');
+%     end 
+    
+%     lobe_plot.contour_3d();
 end

@@ -4,16 +4,21 @@ classdef set_sample_options
     %   Detailed explanation goes here
     
     properties
-        Tmax = 1;
-        dt = 0.05;
+        Tmax = 1;   %terminal time
+        dt = 0.05;  %increment time in random walk 
         
-        
+        %ode function handle
         odefcn = @ode15s;
-        
+        %support handle
         X_func = @blank_event;
         
+        %nonnegative function handle
+        nonneg_func = [];
+        
+        %function to choose initial point
         x0;
         
+        %parallel not yet implemented
         parallel = 0;
     end
     

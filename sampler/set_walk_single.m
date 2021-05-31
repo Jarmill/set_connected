@@ -46,7 +46,7 @@ for i = 1:Nstep-1
  
     ucurr = u_func();
 
-    
+   
     fcurr = @(t,x) ucurr;
     
     [tode, xode] = ode45(@(t,x) ucurr, [0,dt],xcurr, odeopts);
@@ -56,7 +56,7 @@ for i = 1:Nstep-1
     out_sim.u(:, i) = ucurr;
     out_sim.x(:, i+1) = xnext;
     
-    out_sim.t_traj = [out_sim.t_traj; tode];
+    out_sim.t_traj = [out_sim.t_traj; tode + dt*(i-1)];
     out_sim.x_traj = [out_sim.x_traj; xode];
         
     
@@ -73,6 +73,17 @@ end
 out_sim.u = out_sim.u(:, 1:(i+1));
 out_sim.x = out_sim.x(:, 1:(i+1));
 % theta = linspace(0, 
-
+% if ~isempty(options.nonneg_func)
+%     %evaluate nonnegative functions along controlled trajectories
+%     
+%     Ntraj = length(out_sim.t_traj);
+%     out_sim.nonneg_traj = zeros(2*n+1, N_traj);
+%     for i = 1:Ntraj
+%         out_sim.nonneg_traj(:, i) = options.nonneg_func(out_sim.x_traj(:, i));
+%     end
+%         
+% 
+% 
+% end
 end
 

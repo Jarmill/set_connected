@@ -6,10 +6,9 @@ classdef set_manager
     
     properties
         options = [];
-        poly = struct('v', [], 'zeta', []);        
-        
+        poly = struct('v', [], 'zeta', [], 'nonneg', []);        
+        scale_weight = 1;
         cc = coef_con([], []);
-
     end
     
     methods
@@ -170,8 +169,24 @@ classdef set_manager
             
             func_eval.v0 = polyval_func(v0, [x]);            
             func_eval.v1 = polyval_func(v1, [x]);
-                                                            
-            %TODO: function evaluations
+                                
+            
+            %nonnegative function evaluation 
+            nonneg_poly = [nonneg.occ; nonneg.u; nonneg.slack];
+            [cnn,mnn] = coefficients(nonneg_poly,[poly_var.t; poly_var.x]);
+            nn_eval = value(cnn)*mnn;
+            
+            poly_eval.nonneg = nn_eval;
+            func_eval.nonneg = polyval_func(nn_eval, [t;x]);
+            
+            %account for scaling time from [0,T] to [0, 1]
+            if obj.options.scale
+                poly_eval.scale_weight = obj.options.Tmax;
+            else
+                poly_eval.scale_weight = 1;
+            end
+%             poly_eval.scale_weigh = obj.scale_weight;
+            
         end
         
         

@@ -9,6 +9,7 @@ classdef lobe_plotter
         f; %single set X
         
         out = [];
+        out_sim = [];
         opt = [];
         func = struct('f', [], 'v', [], 'zeta', [], 'v0', [], 'v1', []);
         t;
@@ -20,7 +21,7 @@ classdef lobe_plotter
     end
     
     methods
-        function obj = lobe_plotter(opt, out)
+        function obj = lobe_plotter(opt, out, out_sim)
             %LOBE_PLOTTER Construct an instance of this class
             %   Detailed explanation goes here
             
@@ -29,8 +30,12 @@ classdef lobe_plotter
             obj.opt = opt;
             
             %properties of solution
-            if nargin == 2
+            if nargin >= 2
                 obj.out = out;
+            end
+            
+            if nargin >= 3
+                obj.out_sim = out_sim;
             end
             
             %variables
@@ -71,6 +76,12 @@ classdef lobe_plotter
             xlim(obj.axlim.x);
             ylim(obj.axlim.y);
     
+            %sampled trajectories
+            for i = 1:length(obj.out_sim)
+            %     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
+                plot(obj.out_sim{i}.x(1, :), obj.out_sim{i}.x(2, :), 'c', 'HandleVisibility', 'off');
+            end 
+            
             %initial and final locations
             scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
             scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
@@ -125,6 +136,110 @@ classdef lobe_plotter
             zlabel('x_2')
             title('Certificate of Disconnectedness', 'FontSize', obj.FS_title)
         end
+        
+        %% separate these functions into an interface tomorrow
+                function F = v_plot(obj)
+
+            F = figure(18);
+            clf
+            subplot(2, 1, 1)
+            hold on
+
+            for j = 1:length(obj.out_sim)
+                osc = obj.out_sim{j};                    
+                plot(osc.t_traj, osc.v, 'c');
+
+            end
+            
+%             plot(xlim, [1;1]*obj.out.poly.gamma, '--r', 'LineWidth', 3)
+            xlabel('time', 'FontSize', obj.FS_axis)
+            ylabel('$v(t,x)$', 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+            title('Auxiliary Function', 'FontSize', obj.FS_title);   
+            
+            subplot(2,1,2)
+            hold on
+            for j = 1:length(obj.out_sim)
+                osc = obj.out_sim{j};                    
+                plot(osc.t_traj(1:end-1), diff(osc.v), 'c');
+
+            end
+            xlabel('time', 'FontSize', obj.FS_axis)
+            ylabel('$\Delta v(t,x)$', 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+            title('Auxiliary Function Increase', 'FontSize', obj.FS_title);   
+            plot(xlim, [0,0], 'k:') 
+            
+                end
+        
+        function F = nonneg_zeta(obj)
+            %plot the nonnegative slack functions zeta
+            
+            Nzeta = length(obj.out.poly.zeta);
+            if Nzeta
+            F = figure(21);
+            clf
+            
+            
+            hold on
+            for j = 1:length(obj.out_sim)
+                osc = obj.out_sim{j};                    
+                plot(osc.t_traj, osc.nonneg(end-Nzeta:end, :), 'c')
+            end
+
+            ax_loc_curr = ['$\zeta(t,x)$'];
+            xlabel('time', 'FontSize', obj.FS_axis)
+            ylabel(ax_loc_curr , 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+            title(['Constraint Slack'], 'FontSize', obj.FS_title);   
+            plot(xlim, [0,0], 'k:')
+            else
+                F = [];
+            end
+            
+        end
+        
+        function F = nonneg_traj(obj)
+
+            F = figure(20);
+            clf
+%             N0 = length(obj.manager.opts.get_X_init());
+            
+            %no other switching present, so there is only one system for
+            %the occupation measure
+            
+            if obj.out.func.FREE_TIME
+                ax_label= {'$-v(t,x)$', '$w(t,x) + v(t,x)-1$', '$w(t,x)$', '$-L_{f0} v(t,x) - b^T \zeta(t,x)$'};
+            else
+                ax_label= {'$-v(t,x)$', '$w(x) + v(T,x)-1$', '$w(x)$', '$-L_{f0} v(t,x) - b^T \zeta(t,x)$'};
+            end
+            ax_title = {'Nonpositive v (initial)', 'Reachability Indicator (terminal)', 'Reachability Indicator (terminal slack)', 'Decreasing v (occupation)'};
+            
+            tiledlayout(4, 1);
+            for i = 1:4
+                nexttile
+                hold on
+                
+                Nzeta = length(obj.out.poly.zeta);
+                
+                for j = 1:length(obj.out_sim)
+                    osc = obj.out_sim{j};                    
+                    if i == 1
+                        plot(osc.t, osc.nonneg(1:(end-3-Nzeta), :), 'c');
+                    elseif i==2
+                        %TODO: Fix this so only t=1 is plotted
+                        plot(osc.t, osc.nonneg(end-2-Nzeta, :), 'c');
+                    elseif i==3
+                        plot(osc.t, osc.nonneg(end-1-Nzeta, :), 'c');
+                    else
+                        plot(osc.t, osc.nonneg(end-Nzeta, :), 'c');
+                    end
+                end
+                xlabel('time', 'FontSize', obj.FS_axis)
+                ylabel(ax_label{i}, 'interpreter', 'latex', 'FontSize', obj.FS_axis);
+                title(ax_title{i}, 'FontSize', obj.FS_title);   
+                plot(xlim, [0,0], 'k:')
+            end
+          end
+        
+    
     end
 end
 
