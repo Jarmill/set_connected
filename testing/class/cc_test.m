@@ -1,7 +1,9 @@
 SOLVE = 1;
 SAMPLE = 1;
-PLOT = 1 ;
-EVAL = 1;
+EVAL = 0;
+PLOT = 1;
+
+%this example works without partitioning
 
 
 FEAS = 0;
@@ -10,7 +12,8 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 2;
+% opt.Tmax = 2;
+opt.Tmax = 51;
 opt.verbose = 1;
 
 opt.scale = 1;
@@ -56,7 +59,7 @@ else
 end
 % opt.verbose = 1;
 % d_range = [2, 4];
-d_range = [3, 5];
+d_range = [2, 6];
 
 if SOLVE
 IM = set_manager(opt);
@@ -77,11 +80,12 @@ if SAMPLE
     s_opt.x0 = @() opt.X0(:,randi( size(opt.X0, 2)));
 
     s_opt.Tmax = opt.Tmax;
-    s_opt.dt = 0.05;
+%     s_opt.dt = 0.05;
+    s_opt.dt = 0.5;
     s_opt.X_func = supp_func;
     s_opt.nonneg_func = out.func.nonneg;
 
-    Np = 50;
+    Np = 10;
 
     out_sim=set_walk(Np, s_opt);
 

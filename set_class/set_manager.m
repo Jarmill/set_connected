@@ -32,13 +32,13 @@ classdef set_manager
             end
             
             if length(order_range) == 1
-                order_range = [1; d];
+                order_range = [1; order_range];
             end
-            d_range = 2*order_range;
+%             d_range = 2*order_range;
             
-            for d_curr = d_range(1):d_range(2)
-                out = obj.check_connected(d_curr);
-                fprintf('order=%d, \t status=%s\n', d_curr/2, char(out.status))
+            for order_curr = order_range(1):order_range(2)
+                out = obj.check_connected(2*order_curr);
+                fprintf('order=%d, \t status=%s\n', order_curr, char(out.status))
                 if (out.status ~= conn_status.Indeterminate)
                     break
                 end
@@ -121,7 +121,7 @@ classdef set_manager
             
             [sol, monom, Gram, residual] = solvesos(prog.cc.con, prog.objective, opts, prog.cc.coef);
             
-            out = struct('poly', [], 'problem', sol.problem, 'sol', [], 'block', [], 'func', []);
+            out = struct('poly', [], 'problem', sol.problem, 'sol', [], 'block', [], 'func', [], 'n', length(prog.poly.x));
             if sol.problem == 0
                 %the sets X0 and X1 are disconnected in time range [0, T]
                 [out.poly, out.func] = obj.recover_poly(prog.poly, prog.nonneg);

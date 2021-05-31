@@ -1,51 +1,34 @@
-classdef moon_plotter
+classdef moon_plotter < set_plotter_interface
     %MOON_PLOTTER Visualization of bicuspid system with circles
     %for set (dis)-connectedness
     
     properties
-        FS_axis = 14;       %font size of axis
-        FS_title = 16;      %font size of title
         
-        
-        %other circles
+        %moon contour
         inner_x = []; %(x - inner_x)^2 + y^2 >= inner_rad^2 (assume inner_x is positive)
         inner_rad = [];
         
         %other circles
         circle = struct('center', [], 'rad', []);
-        
-        out = [];
-        opt = [];
-        func = struct('f', [], 'v', [], 'zeta', [], 'v0', [], 'v1', []);
-        t;
-        x;
-        
-        axlim = struct('x', [], 'y', [], 't', []);
-        color0 = [0.4940, 0.1840, 0.5560];
-        color1 = [0.4660, 0.6740, 0.1880];
     end
     
     methods
-        function obj = moon_plotter(opt, out)
+        function obj = moon_plotter(opt, out, out_sim)
             %MOON_PLOTTER Construct an instance of this class
             %   Detailed explanation goes here
             
             
-            %properties of problem
-            obj.opt = opt;
-            
-            %properties of solution
-            if nargin == 2
-                obj.out = out;
+            if nargin < 2
+                out = [];
             end
             
+            if nargin < 3
+                out_sim = [];
+            end
             
-            
-            %variables
-            syms tv [1 1];
-            syms xv [2 1];
-            obj.t = tv;
-            obj.x = xv;
+            obj = obj@set_plotter_interface(opt,out, out_sim);
+            %properties of problem          
+           
             
             
             %plot axes
@@ -60,19 +43,6 @@ classdef moon_plotter
             if out.problem
                 return
             end
-            
-            %symbolic evaluation only for the double-lobe
-            %for plotting contours
-%             f_func = polyval_func(opt.X.ineq, opt.x);
-%             obj.func.X = f_func(xv);
-            %bicuspid
-%             f_func = @(x, y) -(x.^2-obj.a^2)*(x-obj.a).^2 - (y.^2-obj.a^2).^2;
-%             obj.func.X = f_func(xv(1), xv(2));
-            obj.func.v0= out.func.v0(xv);
-            obj.func.v1= out.func.v1(xv);
-            obj.func.v= out.func.v([tv; xv]);
-            obj.func.zeta= out.func.zeta([tv; xv]);
-            
         end
                
         
@@ -145,15 +115,6 @@ classdef moon_plotter
             %axis limits
             
             limits = [obj.axlim.x, obj.axlim.y];
-%             xlim(obj.axlim.x);
-%             ylim(obj.axlim.y);
-    
-            %initial and final locations
-            %only if points (correct this later)
-%             scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
-%             scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
-
-%             fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
             
             %contours of separation
             hold on

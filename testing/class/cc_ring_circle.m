@@ -1,7 +1,7 @@
-SOLVE = 1;
+SOLVE =1;
 PLOT = 1;
-SAMPLE = 1;
-
+SAMPLE = 0;
+EVAL = 1;
 
 opt = set_path_options;
 
@@ -9,7 +9,7 @@ opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
 opt.Tmax = 2;
 
-opt.scale = 0;
+opt.scale = 1;
 opt.verbose = 1;
 
 order = 4;
@@ -104,88 +104,93 @@ if SAMPLE
     X_func = @(pt) X_out_func(pt) || X_in_func(pt);
     
     supp_func = @(t,x) support_event(t, x, X_func);
-    
-s_opt = set_sample_options;
-% x0 = @() [0;0];
 
-s_opt.x0 = @() X0;
+    s_opt = set_sample_options;
+    % x0 = @() [0;0];
 
-s_opt.Tmax = Tmax;
-s_opt.dt = 0.1;
-s_opt.X_func = supp_func;
- 
-Np = 15;
+    s_opt.x0 = @() X0;
 
-out_sim=set_walk(Np, s_opt);
+    s_opt.Tmax = opt.Tmax;
+    s_opt.dt = 0.1;
+    s_opt.X_func = supp_func;
+
+    Np = 15;
+
+    out_sim=set_walk(Np, s_opt);
 
 end
 
 % 
 % %TODO: write plotting code for ellipses
 if PLOT &&  out.status == conn_status.Disconnected
-    figure(1)
-    clf
-    syms tv [1 1];
-    syms xv [2 1];
-    hold on 
-    color0 = [0.4940, 0.1840, 0.5560];
-    color1 = [0.4660, 0.6740, 0.1880];
+    bplot = ring_circ_plotter(opt, out);
+    
+    bplot.circle = struct('R_ring_outer',R_ring_outer, 'R_ring_inner', R_ring_inner, 'R_circ', R_circ);
+    bplot.set_plot();
+%     bplot.contour_2d();
+%     figure(1)
+%     clf
+%     syms tv [1 1];
+%     syms xv [2 1];
+%     hold on 
+%     color0 = [0.4940, 0.1840, 0.5560];
+%     color1 = [0.4660, 0.6740, 0.1880];
+% %     
+% 
+% th_fine = linspace(0, 2*pi, 200);
+%     circ_fine = [cos(th_fine); sin(th_fine)];
 %     
-
-th_fine = linspace(0, 2*pi, 200);
-    circ_fine = [cos(th_fine); sin(th_fine)];
-    
-
-    color_int = 0.8*[1,1,1];
-    patch(R_ring_outer*circ_fine(1, :), R_ring_outer*circ_fine(2, :), color_int, 'LineWidth', 3, 'DisplayName', 'X')
-    patch(R_ring_inner*circ_fine(1, :), R_ring_inner*circ_fine(2, :), 'w', 'LineWidth', 3, 'HandleVisibility', 'off')
-    patch(R_circ*circ_fine(1, :), R_circ*circ_fine(2, :), color_int, 'LineWidth', 3, 'HandleVisibility', 'off')
-
-    
-    if POINTS0
-        scatter(X0(1, :), X0(2, :), 100, 'ok', 'DisplayName', 'X0');
-    else
-        circ0 = R0*circ_fine + C0;
-        plot(circ0(1, :), circ0(2, :), '--k', 'LineWidth', 3, 'DisplayName', 'X0');
-    end
-    scatter(X1(1, :), X1(2, :), 100, '*k', 'DisplayName', 'X1');
-
-    
-    v0 = out.func.v0(xv);
-    v1 = out.func.v1(xv);
-    limits = 1.5*[-1,1,-1,1];
-    fimplicit(v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', color0, 'LineWidth', 3);
-    fimplicit(v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', color1, 'LineWidth', 3);
-    
-    
-    
-    for i = 1:Np
-%     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
-        plot(out_sim{i}.x(1, :), out_sim{i}.x(2, :), 'k', 'HandleVisibility', 'off');
-    end
-    
-    
-
-    axis square;
-    
-%     viscircles(X1', R, 'color', 'k')
-%     viscircles(X0', R0, 'LineStyle', '--', 'color', color0)
-%     viscircles(X1', R0, 'LineStyle', '--', 'color', color1)
-    legend('location', 'northeast', 'FontSize', 12)
-    
-    xlabel('x_1', 'FontSize', 12)
-    ylabel('x_2', 'FontSize', 12)
-    title(['Proof of Disconnectedness at order ', num2str(order)], 'FontSize', 16)
-    
-% %     lobe_plot = lobe_plotter(opt, out);
-% %     lobe_plot.contour_2d();
-% %     lobe_plot.contour_3d();
 % 
-% figure(2)
-% clf
-% hold on
-% v = out.infeas.func.v([tv; xv]);
-% fimplicit3(v==0, [0, 2, limits], 'MeshDensity', 120);
+%     color_int = 0.8*[1,1,1];
+%     patch(R_ring_outer*circ_fine(1, :), R_ring_outer*circ_fine(2, :), color_int, 'LineWidth', 3, 'DisplayName', 'X')
+%     patch(R_ring_inner*circ_fine(1, :), R_ring_inner*circ_fine(2, :), 'w', 'LineWidth', 3, 'HandleVisibility', 'off')
+%     patch(R_circ*circ_fine(1, :), R_circ*circ_fine(2, :), color_int, 'LineWidth', 3, 'HandleVisibility', 'off')
 % 
+%     
+%     if POINTS0
+%         scatter(X0(1, :), X0(2, :), 100, 'ok', 'DisplayName', 'X0');
+%     else
+%         circ0 = R0*circ_fine + C0;
+%         plot(circ0(1, :), circ0(2, :), '--k', 'LineWidth', 3, 'DisplayName', 'X0');
+%     end
+%     scatter(X1(1, :), X1(2, :), 100, '*k', 'DisplayName', 'X1');
 % 
+%     
+%     v0 = out.func.v0(xv);
+%     v1 = out.func.v1(xv);
+%     limits = 1.5*[-1,1,-1,1];
+%     fimplicit(v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', color0, 'LineWidth', 3);
+%     fimplicit(v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', color1, 'LineWidth', 3);
+%     
+%     
+%     
+%     for i = 1:Np
+% %     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
+%         plot(out_sim{i}.x(1, :), out_sim{i}.x(2, :), 'k', 'HandleVisibility', 'off');
+%     end
+%     
+%     
+% 
+%     axis square;
+%     
+% %     viscircles(X1', R, 'color', 'k')
+% %     viscircles(X0', R0, 'LineStyle', '--', 'color', color0)
+% %     viscircles(X1', R0, 'LineStyle', '--', 'color', color1)
+%     legend('location', 'northeast', 'FontSize', 12)
+%     
+%     xlabel('x_1', 'FontSize', 12)
+%     ylabel('x_2', 'FontSize', 12)
+%     title(['Proof of Disconnectedness at order ', num2str(order)], 'FontSize', 16)
+%     
+% % %     lobe_plot = lobe_plotter(opt, out);
+% % %     lobe_plot.contour_2d();
+% % %     lobe_plot.contour_3d();
+% % 
+% % figure(2)
+% % clf
+% % hold on
+% % v = out.infeas.func.v([tv; xv]);
+% % fimplicit3(v==0, [0, 2, limits], 'MeshDensity', 120);
+% % 
+% % 
 end
