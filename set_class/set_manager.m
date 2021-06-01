@@ -7,8 +7,6 @@ classdef set_manager
     properties
         options = [];
         poly = struct('v', [], 'zeta', [], 'nonneg', []);        
-        scale_weight = 1;
-        cc = coef_con([], []);
     end
     
     methods
@@ -198,7 +196,6 @@ classdef set_manager
             t = obj.options.t;
             x = obj.options.x;
             [v, cv] = polynomial([t; x], d);
-            gamma = sdpvar(1,1);
 
             n = length(x);
             
@@ -210,7 +207,7 @@ classdef set_manager
                 coeff_zeta = [coeff_zeta; czeta];
             end
             
-            poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x', x, 'gamma', gamma);
+            poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x', x);
             coeff_out = [cv; coeff_zeta];
         end
         
