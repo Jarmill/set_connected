@@ -26,6 +26,7 @@ classdef set_location < handle
         
             obj.options = options;
             obj.time_range = time_range;
+%             obj.box = box_process(box);
             obj.box = box;
             
             if nargin >= 4
@@ -230,12 +231,16 @@ classdef set_location < handle
             
              X_cell  = obj.prep_space_cell(obj.options.X);            
             
-            
+            T = obj.options.Tmax;
                         %occupation measure (+box, complement)
             if obj.options.scale
-                Tsupp = t*(1-t);
+%                 Tsupp = t*(1-t); 
+                Tsupp = (t - obj.time_range(1)/T)*(obj.time_range(2)/T - t);
+                scale_weight = T;
             else
-                Tsupp = t*(obj.options.Tmax - t);
+%                 Tsupp = t*(obj.options.Tmax - t);
+                Tsupp = (t - obj.time_range(1))*(obj.time_range(2) - t);
+                scale_weight = 1;
             end   
             
             con_occ = [];
@@ -247,9 +252,13 @@ classdef set_location < handle
             con_slack = [];
             coeff_slack = [];
             
+            %TODO: implement a cull or a an nsatz preprocessor in case X
+            %and the box are disjoint
+            [box_loc, box_center, box_half] = box_process(n, [obj.box]);
+            
             for i = 1:length(X_cell)
                 X_curr = X_cell{i};
-                X_curr.ineq = [Tsupp; X_curr.ineq];
+                X_curr.ineq = [Tsupp; X_curr.ineq; box_half.^2-(x-box_center).^2];
                 
                 %occupation
                 [con_occ_curr, coeff_occ_curr] = obj.make_psatz(d, X_curr, nonneg.occ, [t; x]);
@@ -340,7 +349,53 @@ classdef set_location < handle
         end
             
 
+        %% recovery
+        function [poly_eval, func_eval] = recover_poly(obj, poly_var, nonneg)
+            %recover polynomials from computed disconnectedness certificate
+            t = poly_var.t;
+            x = poly_var.x;
+            n = length(poly_var.x);
+            
+            %solved coefficients of v and zeta
+            [cv,mv] = coefficients(poly_var.v,[poly_var.t; poly_var.x]);
+            v_eval = value(cv)'*mv;
+
+            [cz, mz] = coefficients(poly_var.zeta,[poly_var.t; poly_var.x]);
+            if n == 1
+                zeta_eval = value(cz)'*mz;
+            else
+                zeta_eval = value(cz)*mz;
+            end
+          
+                        
+            poly_eval = struct('v', v_eval, 'zeta', zeta_eval, 'v0', v0, 'v1', v1);
+            
+            % form functions using helper function 'polyval_func'
+            func_eval = struct;
+            func_eval.v = polyval_func(v_eval, [t; x]);
+            func_eval.zeta = polyval_func(zeta_eval, [t; x]);
+            
+%            func_eval.v0 = polyval_func(v0, [x]);            
+%             func_eval.v1 = polyval_func(v1, [x]);
+                                
+            
+            %nonnegative function evaluation 
+            nonneg_poly = [nonneg.occ; nonneg.u; nonneg.slack];
+            [cnn,mnn] = coefficients(nonneg_poly,[poly_var.t; poly_var.x]);
+            nn_eval = value(cnn)*mnn;
+            
+            poly_eval.nonneg = nn_eval;
+            func_eval.nonneg = polyval_func(nn_eval, [t;x]);
+            
+            %account for scaling time from [0,T] to [0, 1]
+            if obj.options.scale
+                poly_eval.scale_weight = obj.options.Tmax;
+            else
+                poly_eval.scale_weight = 1;
+            end
+        end
         
+        %% helper functions
         
         function [cons, coeff] = make_psatz(obj, d, X, f, vars)
             %MAKE_PSATZ a positivestellensatz expression to impose that
