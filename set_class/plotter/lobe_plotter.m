@@ -3,11 +3,10 @@ classdef lobe_plotter < set_plotter_interface
     %for set (dis)-connectedness
     
     properties
-        opt = [];
+%         opt = [];
         
         axlim = struct('x', [], 'y', [], 't', []);
-        color0 = [0.4940, 0.1840, 0.5560];
-        color1 = [0.4660, 0.6740, 0.1880];
+
     end
     
     methods

@@ -4,7 +4,8 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 10;
+% opt.Tmax = 10;
+options.Tmax = 151;
 % opt.Tmax = 51;
 opt.verbose = 1;
 
@@ -26,11 +27,12 @@ opt.X = X;
 opt.X0 = X0_infeas;
 opt.X1 = X1_infeas;
 
-opt.box = 1.5;
+opt.box = [-1.75,2;
+    -1.25,1.65];
 
 %% define the manager
 
-spacing = [2; 2; 2];
+spacing = [1; 2; 1];
 
 % spacing = [3;1;1];
 
@@ -38,5 +40,7 @@ SM = set_manager_partition(opt, spacing);
 
 % [loc, limits] = SM.make_locations(opt, spacing);
 
-prog_mgr = SM.make_program(4)
-out = SM.solve_program(prog_mgr)
+out = SM.check_connected(4);
+
+% prog_mgr = SM.make_program(4)
+% out = SM.solve_program(prog_mgr)

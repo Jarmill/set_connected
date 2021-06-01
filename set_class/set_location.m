@@ -368,7 +368,7 @@ classdef set_location < handle
             end
           
                         
-            poly_eval = struct('v', v_eval, 'zeta', zeta_eval, 'v0', v0, 'v1', v1);
+            poly_eval = struct('v', v_eval, 'zeta', zeta_eval);
             
             % form functions using helper function 'polyval_func'
             func_eval = struct;

@@ -36,6 +36,46 @@ classdef set_manager_partition < handle
             [obj.loc, obj.limits] = obj.make_locations(opt, spacing);
         end
         
+        %% main execution routine
+        
+       
+        function out = climb_connected(obj, order_range)
+            %meta-algorithm: increase degree between d_range(1):d_range(2)
+            
+            
+            if nargin == 1
+                order_range = [1; 5];
+            end
+            
+            if length(order_range) == 1
+                order_range = [1; order_range];
+            end
+            
+            for order_curr = order_range(1):order_range(2)
+                out = obj.check_connected(2*order_curr);
+                fprintf('order=%d, \t status=%s\n', order_curr, char(out.status))
+                if (out.status ~= conn_status.Indeterminate)
+                    break
+                end
+            end
+            
+        end
+        
+        function out = check_connected(obj, d)            
+            prog_infeas = obj.make_program(d);
+            out_infeas = solve_program(obj, prog_infeas);
+            farkas= ~out_infeas.problem;
+            if farkas
+                status = conn_status.Disconnected;
+            else
+                status = conn_status.Indeterminate;          
+            end
+            
+            out = out_infeas;
+            out.status = status;
+        end
+        
+        
         %% create the location cells of the partition
         
         function [loc, limits] = make_locations(obj, options, spacing)
@@ -169,7 +209,12 @@ classdef set_manager_partition < handle
             
             [sol, monom, Gram, residual] = solvesos(prog.cons, prog.objective, opts, prog.coeff);
             
-            out = struct('poly', [], 'problem', sol.problem, 'sol', [], 'block', [], 'func', [], 'n', length(obj.options.x));
+            out = struct('poly', [], 'problem', sol.problem, 'sol', [], 'block', [], 'func', [], ...
+                'n', length(obj.options.x)); 
+            
+            %putting a cell in a struct constructor will yield a struct
+            %array. This is undesirable behavior
+            out.limits = obj.limits;
             if sol.problem == 0
                 %the sets X0 and X1 are disconnected in time range [0, T]
                 [out.poly, out.func] = obj.recover_poly(prog.poly, prog.nonneg);
@@ -181,6 +226,8 @@ classdef set_manager_partition < handle
             end
         end
     
+%         function
+        
         function [poly_rec, func_rec] = recover_poly(obj, poly, nonneg)
             %distribute out recovery to the locations
             
