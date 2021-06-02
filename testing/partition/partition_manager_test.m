@@ -32,7 +32,9 @@ opt.box = [-1.75,2;
 
 %% define the manager
 
-spacing = [1; 2; 1];
+spacing= [1; 2; 1];
+
+% spacing = [4; 2; 3];
 
 % spacing = [3;1;1];
 

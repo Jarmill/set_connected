@@ -15,8 +15,10 @@ classdef set_plotter_interface < handle
         out_sim;        %trajectories
         
         vars=struct('t',[],'x',[]);           %symbolic variables for plotting
-        func = struct('v', [], 'zeta', [], 'v0', [], 'v1', []);   %functions in symbolic variables
+%         func = struct('v', [], 'zeta', [], 'v0', [], 'v1', []);   %functions in symbolic variables
         
+        X_func;
+
         %colors for v contours at times 0 and T
         color0 = [0.4940, 0.1840, 0.5560];
         color1 = [0.4660, 0.6740, 0.1880];
@@ -34,17 +36,17 @@ classdef set_plotter_interface < handle
             n = out.n;
             
            
-            syms tv [1 1];
-            syms xv [n 1];
-            obj.vars.t = tv;
-            obj.vars.x = xv;
+%             syms tv [1 1];
+%             syms xv [n 1];
+%             obj.vars.t = tv;
+%             obj.vars.x = xv;
             
-            if ~isempty(obj.out.func)
-                obj.func.v0= out.func.v0(xv);
-                obj.func.v1= out.func.v1(xv);
-                obj.func.v= out.func.v([tv; xv]);
-                obj.func.zeta= out.func.zeta([tv; xv]);
-            end      
+%             if ~isempty(obj.out.func)
+%                 obj.func.v0= out.func.v0(xv);
+%                 obj.func.v1= out.func.v1(xv);
+%                 obj.func.v= out.func.v([tv; xv]);
+%                 obj.func.zeta= out.func.zeta([tv; xv]);
+%             end      
             
             
         end
@@ -182,7 +184,7 @@ classdef set_plotter_interface < handle
         function F = nonneg_zeta(obj)
             %plot the nonnegative slack functions zeta
             
-            Nzeta = length(obj.out.poly.zeta);
+            Nzeta = obj.out.n;
             if Nzeta
             F = figure(21);
             clf
@@ -213,7 +215,7 @@ classdef set_plotter_interface < handle
             
             %no other switching present, so there is only one system for
             %the occupation measure
-            Nzeta = length(obj.out.poly.zeta);
+            Nzeta = obj.out.n;
            
           
             ax_title = {'Nonpositive v (initial)', 'Reachability Indicator (terminal)', 'Reachability Indicator (terminal slack)', 'Decreasing v (occupation)'};

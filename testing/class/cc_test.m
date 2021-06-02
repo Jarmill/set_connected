@@ -1,6 +1,6 @@
-SOLVE = 1;
+SOLVE = 0;
 SAMPLE = 1;
-EVAL = 0;
+EVAL = 1;
 PLOT = 1;
 
 %this example works without partitioning
@@ -81,11 +81,11 @@ if SAMPLE
 
     s_opt.Tmax = opt.Tmax;
 %     s_opt.dt = 0.05;
-    s_opt.dt = 0.5;
+    s_opt.dt = 0.05;
     s_opt.X_func = supp_func;
     s_opt.nonneg_func = out.func.nonneg;
 
-    Np = 10;
+    Np = 20;
 
     out_sim=set_walk(Np, s_opt);
 

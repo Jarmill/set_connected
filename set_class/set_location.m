@@ -136,7 +136,7 @@ classdef set_location < handle
                     nonneg_init = v0 - 1; %v0 >= 1
 
                     for i = 1:length(X0_active)
-                        v0_val = replace(v0, x, X0(:, i));
+                        v0_val = replace(nonneg_init, x, X0(:, i));
                         con_init = [con_init; v0_val >= 0];
 
                     end
@@ -174,7 +174,7 @@ classdef set_location < handle
                         end
                         nonneg_term = -v1; %v1 <= 1
                         for i = 1:length(X1_active)
-                            v1_val = replace(v1, x, X1(:, i));
+                            v1_val = replace(nonneg_term, x, X1(:, i));
                             con_term = [con_term; v1_val >= 0];
                         end
                         con_term = con_term:['Cell ', num2str(obj.id), ' terminal'];
@@ -393,6 +393,21 @@ classdef set_location < handle
             else
                 poly_eval.scale_weight = 1;
             end
+            
+                        %evaluations of v at initial and terminal times
+            v0_eval = replace(v_eval, t, 0);            
+            
+            %terminal set
+            if obj.options.scale
+                v1_eval = replace(v_eval, t, 1);
+            else
+                v1_eval = replace(v_eval, t, obj.options.Tmax);
+            end
+            
+            poly_eval.v0 = v0_eval;
+            poly_eval.v1 = v1_eval;
+            func_eval.v0 = polyval_func(v0_eval, x);
+            func_eval.v1 = polyval_func(v1_eval, x);
         end
         
         %% helper functions
@@ -416,7 +431,7 @@ classdef set_location < handle
 %             cc_curr = coef_con(coeff, cons);
         end
         
-            function X_cell = prep_space_cell(obj, X)
+        function X_cell = prep_space_cell(obj, X)
             %PREP_SPACE_CELL: Split up X into cells
             if iscell(X)
                 %X is already a cell, nothing to be done

@@ -1,13 +1,18 @@
 function [out_sim] = set_traj_eval(out, out_sim)
 %SET_TRAJ_EVAL evaluate nonnegative trajectories along random-walk
 %trajectories
-sw = out.poly.scale_weight;
+% sw = out.poly.scale_weight;
 
 %   Detailed explanation goes here
 
 nn = out.func.nonneg;
 v = out.func.v;
 n = size(out_sim{1}.x, 1);
+if iscell(out.poly)
+    sw = 1;
+else
+    sw = out.poly.scale_weight;
+end
 for i = 1:length(out_sim)
     tcurr = out_sim{i}.t_traj;
     xcurr = out_sim{i}.x_traj';

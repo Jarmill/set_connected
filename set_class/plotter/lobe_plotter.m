@@ -32,12 +32,16 @@ classdef lobe_plotter < set_plotter_interface
             
             %symbolic evaluation only for the double-lobe
             %for plotting contours
-            f_func = polyval_func(opt.X.ineq, opt.x);
-            obj.func.X = f_func(obj.vars.x);
+%             f_func = polyval_func(opt.X.ineq, opt.x);
+
+            obj.X_func= polyval_func(opt.X.ineq, opt.x);
+%             obj.X_func= f_func(obj.vars.x);
   
             %plot axes
-            obj.axlim.x= [-3, 2.5];
-            obj.axlim.y= [-2, 2];
+%             obj.axlim.x= [-3, 2.5];
+%             obj.axlim.y= [-2, 2];
+            obj.axlim.x = obj.opt.box(1, :);
+            obj.axlim.y = obj.opt.box(2, :);
             if obj.opt.scale
                 obj.axlim.t = [0, 1];
             else
@@ -55,7 +59,7 @@ classdef lobe_plotter < set_plotter_interface
             limits = [obj.axlim.x, obj.axlim.y];
             xlim(obj.axlim.x);
             ylim(obj.axlim.y);
-            fimplicit(obj.func.X == 0, limits,  'k', 'DisplayName','X')
+            fimplicit(@(x,y) obj.X_func([x;y]), limits,  'k', 'DisplayName','X')
             
             title('Double Lobe set to analyze', 'FontSize', obj.FS_title)
             
@@ -85,8 +89,15 @@ classdef lobe_plotter < set_plotter_interface
 
             
             %contours of separation
-            fimplicit(a,obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(a,obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
+            v0_sep = @(x,y) obj.out.func.v0([x;y])-1;
+            v0_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v0_sep(x(i), y(i)),...
+    (1:length(x)),'UniformOutput',false));
+            fimplicit(a, v0_sep_vec, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
+            
+            v1_sep = @(x,y) obj.out.func.v1([x;y]);
+            v1_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v1_sep(x(i), y(i)),...
+    (1:length(x)),'UniformOutput',false));
+            fimplicit(a,v1_sep_vec, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
     
             
             legend('location', 'northwest')
@@ -123,7 +134,7 @@ classdef lobe_plotter < set_plotter_interface
                 plot3(obj.axlim.t, obj.opt.X1(1, i)*[1,1], obj.opt.X1(2, i)*[1,1], 'k', 'HandleVisibility', 'Off')
             end
             
-            fimplicit3(obj.func.v == 0, limits, 'MeshDensity', 120)
+            fimplicit3(@(t,x,y)obj.out.func.v([t;x;y]), limits, 'MeshDensity', 120)
             
             
             xlabel('t')

@@ -7,6 +7,8 @@ classdef set_sample_options
         Tmax = 1;   %terminal time
         dt = 0.05;  %increment time in random walk 
         
+        u_boundary = 1; %always have at least one input equal to +-1?
+        
         %ode function handle
         odefcn = @ode15s;
         %support handle

@@ -210,7 +210,7 @@ classdef set_manager_partition < handle
             [sol, monom, Gram, residual] = solvesos(prog.cons, prog.objective, opts, prog.coeff);
             
             out = struct('poly', [], 'problem', sol.problem, 'sol', [], 'block', [], 'func', [], ...
-                'n', length(obj.options.x)); 
+                'n', length(obj.options.x), 'limits', []); 
             
             %putting a cell in a struct constructor will yield a struct
             %array. This is undesirable behavior
@@ -232,13 +232,47 @@ classdef set_manager_partition < handle
             %distribute out recovery to the locations
             
             Ncell = prod(size(obj.loc));
-            poly_rec = cell(size(obj.loc));
-            func_rec = cell(size(obj.loc));
+%             poly_rec = cell(size(obj.loc));
+%             func_rec = cell(size(obj.loc));
+
+            rec_ind = @(i) obj.loc{i}.recover_poly(poly{i}, nonneg{i});
+            [poly_rec, func_cell] = arrayfun(rec_ind, ...
+                1:Ncell, 'UniformOutput', false);
+            
+%             poly_rec = cellfun(@(o) o{1}, out_rec{:});                       
+%             func_cell = cellfun(@(o) o{2}, out_rec{:});
+            
+            %export the function evaluators
+            func_rec = struct;
+            
+            func_rec.func_cell = func_cell;
+            
+            %determine the grid spacing
+            spacing = cellfun(@length, obj.limits)-1;
+            dlim = cellfun(@(l) l(2) - l(1), obj.limits);
+            start = cellfun(@(l) l(1), obj.limits);
+            
+            func_rec.grid_handle = @(x) grid_ind(x, dlim, start, spacing);
+      
+            
+            if obj.options.scale
+                scale_weight = obj.options.Tmax;
+            else
+                scale_weight = 1;
+            end
+            
+            %handles to evaluate the polynomials
+            
+            func_rec.v      = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.v([vars(1)/scale_weight; vars(2:end)]);
+            func_rec.v0     = @(vars) func_rec.func_cell{func_rec.grid_handle([zeros(1,size(vars,2));vars])}.v0(vars);
+            func_rec.v1     = @(vars) func_rec.func_cell{func_rec.grid_handle([obj.options.Tmax*ones(1,size(vars,2));vars])}.v1(vars);
+            func_rec.zeta   = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.zeta([vars(1)/scale_weight; vars(2:end)]);
+            func_rec.nonneg = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.nonneg([vars(1)/scale_weight; vars(2:end)]);
             
             %convert to a cellfun
-            for i = 1:Ncell
-                [poly_rec{i}, func_rec{i}] = obj.loc{i}.recover_poly(poly{i}, nonneg{i});
-            end
+%             for i = 1:Ncell
+%                 [poly_rec{i}, func_rec{i}] = obj.loc{i}.recover_poly(poly{i}, nonneg{i});
+%             end
             
         end
     end

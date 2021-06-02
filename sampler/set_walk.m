@@ -7,8 +7,11 @@ out_sim = cell(Npoints, 1);
 n = length(options.x0());
 
 function ucurr = u_func()
-    uraw = 2*rand(n, 1)-1;
-    ucurr = uraw/max(abs(uraw));
+    ucurr = 2*rand(n, 1)-1; 
+    if options.u_boundary
+        ucurr = uraw/max(abs(ucurr));
+%     else
+    end
 end
 
 
