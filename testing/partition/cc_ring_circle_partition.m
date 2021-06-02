@@ -97,7 +97,8 @@ if SOLVE
 
 order_range = [1, 2];
 
-spacing= [3; 3; 3];
+spacing = [1; 2; 2];
+% spacing= [3; 3; 3];
 
 % spacing = [10; 4; 4];
 SM = set_manager_partition(opt, spacing);

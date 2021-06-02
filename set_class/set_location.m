@@ -79,9 +79,26 @@ classdef set_location < handle
             end
             
             %polynomials and derivatives for spline constraints
-            v_vec = [v; jacobian(v, [t;x])'];            
-            poly_vec = [v_vec; zeta];
+
+            %In the farkas alternative to the measure program, v must be C1 
+            %continuous and each zeta must be C0 continuous. This may not
+            %necessarily hold in the true solution (relaxation gap). 
+            %
+            %This constraint holds that v will be C0 continous. The
+            %continuity constraint in zeta has been removed. The continuity
+            %constraint on v will soon be loosened so that v can jump
+            %upwards in time along trajectories. v will remain continuous
+            %for now between space jumps, but this may be relaxed later
+            %(since v is time varying)
+            %
             
+            CONTINUOUS = 0;
+            if CONTINUOUS
+                v_vec = [v; jacobian(v, [t;x])'];            
+                poly_vec = [v_vec; zeta];
+            else
+                poly_vec = v;
+            end
             poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x',x, 'vec', poly_vec);
             coeff_out = [cv; coeff_zeta];
         end

@@ -1,7 +1,7 @@
 SOLVE = 1;
-SAMPLE = 1;
+SAMPLE = 0;
 EVAL = 0;
-PLOT = 1;
+PLOT = 0;
 
 %this example works without partitioning
 
@@ -9,7 +9,9 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 20;
+% opt.Tmax = 20;
+opt.Tmax = 10;
+% opt.Tmax = 5;
 % opt.Tmax = 2;
 % opt.Tmax = 151;
 opt.verbose = 1;
@@ -50,9 +52,10 @@ if SOLVE
 % IM = set_manager(opt);
 % out = IM.check_connected(d);
 
-% spacing= [1; 2; 1];
+spacing= [1; 2; 1];
+% spacing = [4; 2; 1];
 
-spacing = [10; 4; 4];
+% spacing = [10; 4; 4];
 SM = set_manager_partition(opt, spacing);
 
 out = SM.climb_connected(order_range);
@@ -72,11 +75,11 @@ if SAMPLE
 
     
     s_opt.u_boundary = 0;
-    s_opt.Tmax = 10;
-%     s_opt.dt = 0.05;
+    s_opt.Tmax = opt.Tmax;
+    s_opt.dt = 0.05;
     s_opt.dt = 0.1;
     s_opt.X_func = supp_func;
-    s_opt.nonneg_func = out.func.nonneg;
+%     s_opt.nonneg_func = out.func.nonneg;
 
     Np = 30;
 
