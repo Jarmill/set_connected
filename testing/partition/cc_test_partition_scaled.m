@@ -10,8 +10,8 @@ opt = set_path_options;
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
 % opt.Tmax = 20;
-opt.Tmax = 10;
-% opt.Tmax = 5;
+% opt.Tmax = 10;
+opt.Tmax = 5;
 % opt.Tmax = 2;
 % opt.Tmax = 151;
 opt.verbose = 1;
@@ -20,43 +20,33 @@ opt.epsilon = 0.01;
 
 opt.scale = 1;
 
-X_bump = 0.2*[0 0 0 -1 -1 -1;
-              0 -1 -2 0 -1 -2];
-% X_bump = 0.2*[0 0 0 -1 -1 -1 -2 -2 -2;
-%               0 -1 -2 0 -1 -2 0 -1 -2];
-%           
-% X0_infeas = [-0.75; 0.5];
-X0_infeas = [-0.75; 0.3]+ X_bump;
-% X0_infeas = [1.3; 0.9]; %quite feasible
+fscale =  @(varnew)(-0.749969140625+1.4666015625.*varnew(1, :)+1.4761.*varnew(2, :)-12.3596191406.*varnew(1, :).^4-4.42050625.*varnew(2, :).^4+10.2172851562.*varnew(1, :).^2-0.2417875.*varnew(2, :).^2+3.9421875.*varnew(1, :).*varnew(2, :).^2+1.0875.*varnew(1, :).*varnew(2, :)-3.2958984375.*varnew(1, :).^3-2.4389.*varnew(2, :).^3);
 
-%points
-X1_infeas = [1.5; 0.5] + X_bump;
-
-%small circle
-% X1_infeas.ineq  = 0.2^2 - sum((opt.x - [1.5; 0.5]).^2);
-
-f = @(x) -(x(1)^4 + x(2)^4 - 3*x(1)^2 - x(1)*x(2)^2 - x(2) + 1);
-X.ineq = f(opt.x);
+% figure
+fimplicit(@(x,y)fscale([x;y]), [-1 1 -1 1]);
+X=struct;
+X.ineq = fscale(opt.x);
 X = fill_constraint(X);
 
 
 opt.X = X;
 
-    opt.X0 = X0_infeas;
-    opt.X1 = X1_infeas;
 
-    order_range = [1, 3];
-    
-    opt.box = [-1.75,2;
-    -1.25,1.65];
+
+opt.X0 = [-0.466666666666667,-0.466666666666667,-0.466666666666667,-0.573333333333333,-0.573333333333333,-0.573333333333333;0.0689655172413793,-0.0689655172413793,-0.206896551724138,0.0689655172413793,-0.0689655172413793,-0.206896551724138];
+opt.X1 = [0.733333333333333,0.733333333333333,0.733333333333333,0.626666666666667,0.626666666666667,0.626666666666667;0.206896551724138,0.0689655172413793,-0.0689655172413793,0.206896551724138,0.0689655172413793,-0.0689655172413793];
+
+order_range = [1, 3];
+
+opt.box = 1;
 
 if SOLVE
 % IM = set_manager(opt);
 % out = IM.check_connected(d);
 
-% spacing= [1; 2; 1];
+spacing= [1; 2; 1];
 % spacing = [2;2;1];
-spacing = [4; 2; 1];
+% spacing = [4; 2; 1];
 
 % spacing = [10; 4; 4];
 SM = set_manager_partition(opt, spacing);

@@ -130,11 +130,13 @@ classdef set_manager_partition < handle
         end
             
         %% generate adjacency constraints between cells
-        function con_adj = make_adjacency_con(obj, poly_var,loc)
+        function [con_adj, coeff_adj] = make_adjacency_con(obj, d, poly_var,loc)
             % inputs: poly_var and loc are cells. The attribute loc.poly
             % may not yet have been bound to poly_var
             
             con_adj = [];
+            
+            coeff_adj = [];
             
             t = obj.options.t;
             x = obj.options.x;
@@ -158,15 +160,49 @@ classdef set_manager_partition < handle
                         loc_next = loc{ind_next};                        
                         poly_next = loc_next.get_adjacency_poly(poly_var{ind_next}, j-1, 0);
                         
-                        coeff_pv = coefficients(poly_curr - poly_next, vars);
-                        con_adj_curr = coeff_pv == 0;
-                        
+                        if j == 1
+                            %time cell
+                            X_shared = loc_curr.get_X();
+                            
+                            %v should increase along the time transition
+                            pos_time_jump = poly_next - poly_curr;
+                            cons_time = [];
+                            coeff_time = [];
+%                             [con_u_curr, coeff_u_curr] = obj.make_psatz(d, X_curr, X_shared, [x]);
+                            for i = 1:length(X_shared)
+                                [p_time_curr, con_time_curr, coeff_time_curr] = constraint_psatz(pos_time_jump, X_shared{i}, x, d); 
+                                cons_time = [cons_time; con_time_curr];
+                                coeff_time = [coeff_time; coeff_time_curr];
+                            end
+%                     con_u_curr = con_u_curr:['Cell ', num2str(obj.id), ' Lie input ', num2str(j)];
+%                     con_u = [con_u; con_u_curr];
+%                     coeff_u = [coeff_u; coeff_u_curr];
+                            con_adj_curr = cons_time;
+                            coeff_adj = [coeff_adj; coeff_time_curr];
+
+                        else
+                            %space cell
+                            coeff_pv = coefficients(poly_curr - poly_next, vars);
+                            con_adj_curr = coeff_pv == 0;
+                        end
                         con_adj = [con_adj; con_adj_curr:['Cell ', num2str(i), '-', num2str(ind_next)]];
+%                         end
                     end
                 end
                 
             end
         end        
+        
+        
+%         function [con_adj] = adjacency_space(obj, loc_curr, loc_next)
+%             %adjacency_space constraints ensuring that v is the same
+%             %between space cells. Unfortunately equalities are required,
+%             %there are no inequality relaxations here
+%             
+%             v_curr = loc_vu
+%             
+%         end
+        
         %% form and solve the program
         function [prog_mgr] = make_program(obj, d)
             %combine together constraints from all locations 
@@ -189,11 +225,11 @@ classdef set_manager_partition < handle
             con_all = [con_all{:}];
             
             coeff_all = cellfun(@(p) p.coeff, prog_all, 'uniformoutput', false);
-            coeff_all = [coeff_all{:}];
+            coeff_all = reshape([coeff_all{:}], [], 1);
             
             
-            con_adj = obj.make_adjacency_con(poly_var,obj.loc);
-            prog_mgr = struct('objective', 0, 'coeff', coeff_all, 'cons', [con_all; con_adj]);
+            [con_adj, coeff_adj] = obj.make_adjacency_con(d, poly_var,obj.loc);
+            prog_mgr = struct('objective', 0, 'coeff', [coeff_all; coeff_adj], 'cons', [con_all; con_adj]);
 %             prog_mgr = struct('nonneg', nonneg_var, 'poly', poly_var, 'cons', ...
 %                 [con_all; con_adj], 'coeff', coeff_all, 'objective', 0);
 

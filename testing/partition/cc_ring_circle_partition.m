@@ -7,12 +7,12 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
-opt.Tmax = 2;
+opt.Tmax = 1;
 
 opt.scale = 1;
 opt.verbose = 1;
 
-order = 4;
+order = 3;
 d = 2*order;
 
 
@@ -97,7 +97,7 @@ if SOLVE
 
 order_range = [1, 2];
 
-spacing = [1; 2; 2];
+spacing = [2; 2; 2];
 % spacing= [3; 3; 3];
 
 % spacing = [10; 4; 4];

@@ -246,8 +246,8 @@ classdef set_location < handle
             x = obj.options.x;
             n = length(x);  
             
-             X_cell  = obj.prep_space_cell(obj.options.X);            
-            
+%              X_cell  = obj.prep_space_cell(obj.options.X);            
+            X_cell = obj.get_X();
             T = obj.options.Tmax;
                         %occupation measure (+box, complement)
             if obj.options.scale
@@ -271,12 +271,13 @@ classdef set_location < handle
             
             %TODO: implement a cull or a an nsatz preprocessor in case X
             %and the box are disjoint
-            [box_loc, box_center, box_half] = box_process(n, [obj.box]);
+%             [box_loc, box_center, box_half] = box_process(n, [obj.box]);
             
             for i = 1:length(X_cell)
                 X_curr = X_cell{i};
-                X_curr.ineq = [Tsupp; X_curr.ineq; box_half.^2-(x-box_center).^2];
-                
+                X_curr.ineq = [Tsupp; X_curr.ineq];
+    %                 X_curr.ineq = [Tsupp; X_curr.ineq; box_half.^2-(x-box_center).^2];
+%                 
                 %occupation
                 [con_occ_curr, coeff_occ_curr] = obj.make_psatz(d, X_curr, nonneg.occ, [t; x]);
                 con_occ_curr = con_occ_curr:['Cell ', num2str(obj.id), ' Lie base '];
@@ -306,6 +307,23 @@ classdef set_location < handle
             
             con_lie = [con_occ; con_u; con_slack];
             coeff_lie = [coeff_occ; coeff_u; coeff_slack];
+            
+        end
+        
+        function X_cell = get_X(obj)
+            %get the support set X intersect the box corresponding to this
+            %location. Purely in state, not in time.
+            
+            X_cell  = obj.prep_space_cell(obj.options.X);
+            x = obj.options.x;
+            n = length(x);
+            [box_loc, box_center, box_half] = box_process(n, [obj.box]);
+            
+            box_con = box_half.^2-(x-box_center).^2;
+            
+            for i = 1:length(X_cell) 
+                X_cell{i}.ineq = [X_cell{i}.ineq; box_con];                
+            end
             
         end
                 %% adjacency constraints
