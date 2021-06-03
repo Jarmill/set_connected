@@ -1,7 +1,7 @@
 SOLVE = 1;
-SAMPLE = 0;
-EVAL = 0;
-PLOT = 0;
+SAMPLE = 1;
+EVAL = 1;
+PLOT = 1;
 
 %this example works without partitioning
 
@@ -10,11 +10,13 @@ opt = set_path_options;
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(2,1);
 % opt.Tmax = 20;
-opt.Tmax = 10;
-% opt.Tmax = 5;
+% opt.Tmax = 10;
+opt.Tmax = 5;
 % opt.Tmax = 2;
 % opt.Tmax = 151;
 opt.verbose = 1;
+
+opt.epsilon = 0.01;
 
 opt.scale = 1;
 

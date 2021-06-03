@@ -150,7 +150,7 @@ classdef set_location < handle
                     x = poly_var.x;  
 %                     v = poly_var.v;
                     v0 = replace(poly_var.v, t, 0);
-                    nonneg_init = v0 - 1; %v0 >= 1
+                    nonneg_init = v0 - obj.options.epsilon; %v0 >= 1
 
                     for i = 1:length(X0_active)
                         v0_val = replace(nonneg_init, x, X0(:, i));

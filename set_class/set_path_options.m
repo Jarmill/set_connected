@@ -10,34 +10,9 @@ classdef set_path_options < handle
         %terminal time   
         Tmax(1,1) double{mustBePositive}  = 5;           
         
+        %threshold for initial set, v >= epsilon
+        epsilon(1,1) double{mustBePositive}  = 1;           
         
-        %use time independent formulation
-        %by default, will find some controller (no objective)
-        %set_path_feas_box_signed will find an L1-optimal controller
-        time_indep(1,1) logical = false; 
-        
-        
-        %objective to minimize:
-        %   time:       time to reach a point on X1 from X0
-        %   int:        Integral of ||u||^2_2 along trajectories (on box)
-        %               or
-        objective = 'time';
-        
-        %function dynamics
-        %f: dynamics
-        %X: space on which dynamics are valid (arbitrary switching)
-%         dynamics = struct('f', [], 'X', {}, 'Tmin', [], 'Tmax', [], 'discrete', 0)
-        
-        
-        %objective to minimize
-        %could be a function (single objective)
-        %or a cell of functions (minimum of entries)        
-%         obj = [];
-        
-        %iterative cuts
-        %output of prior problem may be infeasible (some matrices not PSD)
-        %find a feasible point with a cost of approximately prev_cost
-%         prev_cost = [];
         
         %% Variables and descriptors
         %variables defining sets (array of symbolic variables)
@@ -80,7 +55,7 @@ classdef set_path_options < handle
         solver = 'mosek';
         
         %what is the tolerance for identifying a matrix as rank-1?
-        rank_tol(1,1) double{mustBePositive} = 1e-3; 
+%         rank_tol(1,1) double{mustBePositive} = 1e-3; 
         
         
     end

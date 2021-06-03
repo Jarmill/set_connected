@@ -89,10 +89,10 @@ classdef lobe_plotter < set_plotter_interface
 
             
             %contours of separation
-            v0_sep = @(x,y) obj.out.func.v0([x;y])-1;
+            v0_sep = @(x,y) obj.out.func.v0([x;y])-out.opt.epsilon;
             v0_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v0_sep(x(i), y(i)),...
     (1:length(x)),'UniformOutput',false));
-            fimplicit(a, v0_sep_vec, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
+            fimplicit(a, v0_sep_vec, limits,'DisplayName',['v(0, x) = ', num2str(obj.opt.epsilon)], 'Color', obj.color0)
             
             v1_sep = @(x,y) obj.out.func.v1([x;y]);
             v1_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v1_sep(x(i), y(i)),...
