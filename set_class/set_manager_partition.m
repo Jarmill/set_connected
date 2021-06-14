@@ -159,18 +159,18 @@ classdef set_manager_partition < handle
                         %polynomials at next cell
                         loc_next = loc{ind_next};                        
                         poly_next = loc_next.get_adjacency_poly(poly_var{ind_next}, j-1, 0);
-                        
+                        pos_time_jump = poly_next - poly_curr;
                         if j == 1
                             %time cell
                             X_shared = loc_curr.get_X();
                             
                             %v should increase along the time transition
-                            pos_time_jump = poly_next - poly_curr;
+                            
                             cons_time = [];
                             coeff_time = [];
 %                             [con_u_curr, coeff_u_curr] = obj.make_psatz(d, X_curr, X_shared, [x]);
-                            for i = 1:length(X_shared)
-                                [p_time_curr, con_time_curr, coeff_time_curr] = constraint_psatz(pos_time_jump, X_shared{i}, x, d); 
+                            for k = 1:length(X_shared)
+                                [p_time_curr, con_time_curr, coeff_time_curr] = constraint_psatz(pos_time_jump, X_shared{k}, x, d); 
                                 cons_time = [cons_time; con_time_curr];
                                 coeff_time = [coeff_time; coeff_time_curr];
                             end
@@ -178,14 +178,16 @@ classdef set_manager_partition < handle
 %                     con_u = [con_u; con_u_curr];
 %                     coeff_u = [coeff_u; coeff_u_curr];
                             con_adj_curr = cons_time;
-                            coeff_adj = [coeff_adj; coeff_time_curr];
-
+                            coeff_adj = [coeff_adj; coeff_time];
+%                             disp(['Time: Cell ', num2str(loc_curr.id), ' to ', num2str(loc_next.id), '\n']);
+                            con_adj = [con_adj; con_adj_curr:['Cell ', num2str(i), '-', num2str(ind_next), ' (time)']];
                         else
                             %space cell
-                            coeff_pv = coefficients(poly_curr - poly_next, vars);
+                            coeff_pv = coefficients(pos_time_jump, vars);
                             con_adj_curr = coeff_pv == 0;
+                            con_adj = [con_adj; con_adj_curr:['Cell ', num2str(i), '-', num2str(ind_next),' (space)']];
                         end
-                        con_adj = [con_adj; con_adj_curr:['Cell ', num2str(i), '-', num2str(ind_next)]];
+                        
 %                         end
                     end
                 end
@@ -217,6 +219,7 @@ classdef set_manager_partition < handle
 %             for i = 1:Ncell
 %                 prog_loc = obj.loc{i}r          
             
+            disp('Forming program in each cell')
             prog_all = cellfun(@(l) l.make_program(d), obj.loc, 'uniformoutput', false);
             poly_var = cellfun(@(p) p.poly, prog_all, 'uniformoutput', false);
             nonneg_var = cellfun(@(p) p.nonneg, prog_all, 'uniformoutput', false);
@@ -227,7 +230,7 @@ classdef set_manager_partition < handle
             coeff_all = cellfun(@(p) p.coeff, prog_all, 'uniformoutput', false);
             coeff_all = reshape([coeff_all{:}], [], 1);
             
-            
+            disp('Defining constraints between cells')
             [con_adj, coeff_adj] = obj.make_adjacency_con(d, poly_var,obj.loc);
             prog_mgr = struct('objective', 0, 'coeff', [coeff_all; coeff_adj], 'cons', [con_all; con_adj]);
 %             prog_mgr = struct('nonneg', nonneg_var, 'poly', poly_var, 'cons', ...
@@ -299,11 +302,11 @@ classdef set_manager_partition < handle
             
             %handles to evaluate the polynomials
             
-            func_rec.v      = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.v([vars(1)/scale_weight; vars(2:end)]);
+            func_rec.v      = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1); vars(2:end)])}.v([vars(1)/scale_weight; vars(2:end)]);
             func_rec.v0     = @(vars) func_rec.func_cell{func_rec.grid_handle([zeros(1,size(vars,2));vars])}.v0(vars);
             func_rec.v1     = @(vars) func_rec.func_cell{func_rec.grid_handle([obj.options.Tmax*ones(1,size(vars,2));vars])}.v1(vars);
-            func_rec.zeta   = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.zeta([vars(1)/scale_weight; vars(2:end)]);
-            func_rec.nonneg = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1)/scale_weight; vars(2:end)])}.nonneg([vars(1)/scale_weight; vars(2:end)]);
+            func_rec.zeta   = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1); vars(2:end)])}.zeta([vars(1)/scale_weight; vars(2:end)]);
+            func_rec.nonneg = @(vars) func_rec.func_cell{func_rec.grid_handle([vars(1); vars(2:end)])}.nonneg([vars(1)/scale_weight; vars(2:end)]);
             
             %convert to a cellfun
 %             for i = 1:Ncell

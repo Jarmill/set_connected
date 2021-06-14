@@ -5,7 +5,7 @@ classdef ring_circ_plotter < set_plotter_interface
     properties        
         axlim = struct('x', [-1.5,1.5], 'y', [-1.5,1.5], 't', []);
 
-        
+        rad0 = [];
         circle; %description of set X
     end
     
@@ -62,11 +62,19 @@ classdef ring_circ_plotter < set_plotter_interface
             patch(obj.circle.R_circ*circ_fine(1, :), obj.circle.R_circ*circ_fine(2, :), color_int, 'LineWidth', 3, 'HandleVisibility', 'off')
 
             if isnumeric(obj.opt.X0)
-                scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
+                if size(obj.opt.X0, 1)==1
+                    plot(obj.opt.X0*circ_fine(1, :), obj.opt.X0*circ_fine(2, :), 'color', obj.color0, 'LineWidth', 3, 'DisplayName', 'X0')
+                else
+                    scatter(obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
+                end
             end
             
             if isnumeric(obj.opt.X1)
-                scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
+                if size(obj.opt.X0, 1)==1
+                    plot(obj.opt.X1*circ_fine(1, :), obj.opt.X1*circ_fine(2, :), 'color', obj.color1, 'LineWidth', 3, 'DisplayName', 'X1')
+                else
+                    scatter(obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
+                end
             end
             
             
@@ -100,8 +108,8 @@ classdef ring_circ_plotter < set_plotter_interface
 
             
             %contours of separation
-            fimplicit(a,obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(a,obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
+%             fimplicit(a,obj.func.v0 == opt.epsilon, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
+%             fimplicit(a,obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
     
             
             

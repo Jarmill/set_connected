@@ -9,7 +9,7 @@ n = length(options.x0());
 function ucurr = u_func()
     ucurr = 2*rand(n, 1)-1; 
     if options.u_boundary
-        ucurr = uraw/max(abs(ucurr));
+        ucurr = ucurr/max(abs(ucurr));
 %     else
     end
 end
