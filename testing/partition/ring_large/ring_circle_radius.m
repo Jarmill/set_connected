@@ -1,4 +1,4 @@
-SOLVE =1;
+SOLVE =0;
 PLOT = 1;
 SAMPLE = 1;
 EVAL = 1;
@@ -10,7 +10,7 @@ opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
 opt.x = sdpvar(1,1);
-opt.Tmax = 1;
+opt.Tmax = 2;
 opt.box = [0, 1];
 
 opt.scale = 1;
@@ -67,16 +67,16 @@ if SOLVE
 % spacing = [1; 2];
 % spacing = [4;2];
 
-spacing = [3; 3];
+spacing = [5; 6];
 % spacing= [3; 3; 3];
 
 % spacing = [10; 4; 4];
 SM = set_manager_partition(opt, spacing);
 
 
-% order = 5;
+order = 5;
 % order = 4;
-order = 3;
+% order = 3;
 d = 2*order;
 
 out = SM.check_connected(d);
@@ -108,13 +108,14 @@ if SAMPLE
     s_opt.dt = 0.1;
     s_opt.X_func = supp_func;
 
-    Np = 100;
+%     Np = 200;
+    Np = 300;
 
     out_sim=set_walk(Np, s_opt);
 
 end
 
-if SAMPLE || EVAL
+if (SAMPLE || EVAL) && (out.status == conn_status.Disconnected)
    
     out_sim_rad = out_sim;
     for i = 1:length(out_sim_rad)
