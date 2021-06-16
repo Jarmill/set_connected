@@ -42,11 +42,11 @@ classdef lobe_plotter < set_plotter_interface
 %             obj.axlim.y= [-2, 2];
             obj.axlim.x = obj.opt.box(1, :);
             obj.axlim.y = obj.opt.box(2, :);
-            if obj.opt.scale
-                obj.axlim.t = [0, 1];
-            else
-                obj.axlim.t = [0, obj.opt.Tmax];
-            end
+%             if obj.opt.scale
+%                 obj.axlim.t = [0, 1];
+%             else
+%                 obj.axlim.t = [0, obj.opt.Tmax];
+%             end
         end
                
          

@@ -256,12 +256,15 @@ classdef set_manager_partition < handle
             out.limits = obj.limits;
             if sol.problem == 0
                 %the sets X0 and X1 are disconnected in time range [0, T]
+                disp('Sets are certifiably disconnected')
                 [out.poly, out.func] = obj.recover_poly(prog.poly, prog.nonneg);
                 out.sol = sol;   
                 out.block = struct;
                 out.block.monom = monom;
                 out.block.Gram = Gram;
-                out.block.residual = residual;                            
+                out.block.residual = residual;                
+            else
+                disp('Inconclusive if sets are disconnected')
             end
         end
     
