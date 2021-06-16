@@ -33,7 +33,7 @@ classdef set_plotter_interface < handle
             
             
             %set up symbolic variables
-            n = out.n;
+%             n = out.n;
             
            
 %             syms tv [1 1];
