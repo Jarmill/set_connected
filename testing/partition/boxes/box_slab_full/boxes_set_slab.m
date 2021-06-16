@@ -1,6 +1,6 @@
 SOLVE =0;
 PLOT = 1;
-SAMPLE = 0;
+SAMPLE = 1;
 EVAL = 0;
 
 rng(55, 'twister');
@@ -75,7 +75,7 @@ if SOLVE
 
 % spacing = [1; 1];
 
-spacing = [1; 2; 1];
+spacing = [1; 1; 1];
 % spacing = [4;2];
 
 % spacing = [5; 6];
@@ -85,9 +85,9 @@ spacing = [1; 2; 1];
 SM = set_manager_partition(opt, spacing);
 
 
-% order = 5;
+order = 5;
 % order = 4;
-order = 3;
+% order = 3;
 d = 2*order;
 
 out = SM.check_connected(d);
@@ -109,8 +109,8 @@ if SAMPLE
     s_opt.dt = 0.025;
     s_opt.X_func = supp_func;
 
-%     Np = 100;
-    Np = 300;
+    Np = 100;
+%     Np = 300;
 
     out_sim=set_walk(Np, s_opt);
 

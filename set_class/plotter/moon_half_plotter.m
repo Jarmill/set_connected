@@ -1,6 +1,7 @@
-classdef moon_plotter < set_plotter_interface
-    %MOON_PLOTTER Visualization of moon\ system with circles
+classdef moon_half_plotter < set_plotter_interface
+    %MOON_PLOTTER Visualization of moon system with circles
     %for set (dis)-connectedness
+    %upper half plane only
     
     properties
         
@@ -14,7 +15,7 @@ classdef moon_plotter < set_plotter_interface
     end
     
     methods
-        function obj = moon_plotter(opt, out, out_sim)
+        function obj = moon_half_plotter(opt, out, out_sim)
             %MOON_PLOTTER Construct an instance of this class
             %   Detailed explanation goes here
             
@@ -33,8 +34,8 @@ classdef moon_plotter < set_plotter_interface
             
             
             %plot axes
-            obj.axlim.x= [-3, 2.5];
-            obj.axlim.y= [-2, 2];
+            obj.axlim.x= [-1, 1];
+            obj.axlim.y= [0, 1];
             if obj.opt.scale
                 obj.axlim.t = [0, 1];
             else
@@ -52,7 +53,7 @@ classdef moon_plotter < set_plotter_interface
             if nargin < 4
                 N = 300;
             end
-            theta = linspace(0, 2*pi, N);
+            theta = linspace(0, pi, N);
             x_circ = [cos(theta); sin(theta)];
             
             x_outer = x_circ;
@@ -101,33 +102,73 @@ classdef moon_plotter < set_plotter_interface
             xlim(obj.axlim.x);
             ylim(obj.axlim.y);
 %             view(3)
-            hold off        
+            hold off 
+            pbaspect([2,1,1])
         end
         
-        function F = contour_2d(obj)
+        function [F,a] = traj_2d(obj)
+            [F, a] = obj.set_plot;
+            hold on
+           
+            %sampled trajectories
+            for i = 1:length(obj.out_sim)
+                plot(a,obj.out_sim{i}.x(1, :), obj.out_sim{i}.x(2, :), 'c', 'HandleVisibility', 'off');
+            end 
+            
+            %initial and final locations
+%             scatter(a,obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
+%             scatter(a,obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
+
+        end
+        
+        function F = contour_2d(obj, tdiv)
             %CONTOUR_2D Plot the double lobe and certificate in 2d
             %   Detailed explanation goes here
-%             F = figure(10);
-%             clf
-%             hold on
+            [F, a] = obj.set_plot;
+                        %initial and final locations
+            scatter(a,obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
+            scatter(a,obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
 
-            [F, a] = obj.set_plot();
-%             a = axes;
-            %axis limits
+            hold on
             
+            %axis limits
             limits = [obj.axlim.x, obj.axlim.y];
+    
             
             %contours of separation
-            hold on
-            fimplicit(a, obj.func.v0 == 1, limits,'DisplayName','v(0, x) = 1', 'Color', obj.color0)
-            fimplicit(a, obj.func.v1 == 0, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
+            
+            v0_sep = @(x,y) obj.out.func.v0([x;y])-obj.opt.epsilon;
+            v0_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v0_sep(x(i), y(i)),...
+    (1:length(x)),'UniformOutput',false));
+            fimplicit(a, v0_sep_vec, limits,'DisplayName',['v(0, x) = ', num2str(obj.opt.epsilon)], 'Color', obj.color0)
+            
+            v1_sep = @(x,y) obj.out.func.v1([x;y]);
+            v1_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v1_sep(x(i), y(i)),...
+    (1:length(x)),'UniformOutput',false));
+            fimplicit(a,v1_sep_vec, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
     
+            if nargin == 2
+                %additional contours
+                tspan = linspace(obj.axlim.t(1), obj.axlim.t(2), 2+tdiv);
+                for i = 1:tdiv
+                    tcurr = tspan(i+1);
+                    v_sep = @(x,y) obj.out.func.v([tcurr;x;y]);
+                    v_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v_sep(x(i), y(i)),...
+                    (1:length(x)),'UniformOutput',false));
+                    vcurr = fimplicit(a,v_sep_vec, limits, 'Color', [0,0,0.545]);
+                    if i == 1
+                        vcurr.DisplayName= 'v(t, x) = 0';
+                    else
+                        vcurr.HandleVisibility = 'off';
+                    end
+                end
+            end
+            
             
             legend('location', 'northwest')
             
             title('Certificate of Disconnectedness', 'FontSize', obj.FS_title)
-            xlabel('x_1')
-            ylabel('x_2')
+
 %             view(3)
             hold off                        
         end
