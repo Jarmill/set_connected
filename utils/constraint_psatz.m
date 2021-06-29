@@ -15,6 +15,8 @@ function [p_out, cons, coeff_list] = constraint_psatz(p, X, vars, d)
 
 %deal with monomial structure of equality constraints later
 %this just needs to work.
+%
+%Author: Jared Miller (last edited 6/28/21)
 
 p_out = p;
 coeff_list = [];
