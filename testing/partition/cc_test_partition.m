@@ -107,7 +107,7 @@ if PLOT && out.status == conn_status.Disconnected
     lobe_plot.nonneg_traj();
     lobe_plot.nonneg_zeta();
     
-%         lobe_plot.contour_2d();
+        lobe_plot.contour_2d();
     
-%     lobe_plot.contour_3d();
+    lobe_plot.contour_3d();
 end

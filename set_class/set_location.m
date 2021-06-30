@@ -443,6 +443,8 @@ classdef set_location < handle
             poly_eval.v1 = v1_eval;
             func_eval.v0 = polyval_func(v0_eval, x);
             func_eval.v1 = polyval_func(v1_eval, x);
+            
+            func_eval.box = [obj.time_range; obj.box];
         end
         
         %% helper functions

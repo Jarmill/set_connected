@@ -45,7 +45,7 @@ classdef lobe_plotter < set_plotter_interface
 %             if obj.opt.scale
 %                 obj.axlim.t = [0, 1];
 %             else
-%                 obj.axlim.t = [0, obj.opt.Tmax];
+                obj.axlim.t = [0, obj.opt.Tmax];
 %             end
         end
                
@@ -89,16 +89,35 @@ classdef lobe_plotter < set_plotter_interface
 
             
             %contours of separation
-            v0_sep = @(x,y) obj.out.func.v0([x;y])-out.opt.epsilon;
-            v0_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v0_sep(x(i), y(i)),...
-    (1:length(x)),'UniformOutput',false));
-            fimplicit(a, v0_sep_vec, limits,'DisplayName',['v(0, x) = ', num2str(obj.opt.epsilon)], 'Color', obj.color0)
+            fcell = obj.out.func.func_cell;
+%             Tmax = obj.out.Tmax;
+            for i = 1:length(fcell)
+                fci = fcell{i};
+                if fci.box(1,1) == 0
+                    curr_v0 = fcell{i}.v0;
+                    curr_lim = reshape(fcell{i}.box(2:end, :)', 1, []);
+                    fimplicit(@(x,y) curr_v0([x;y]), curr_lim, 'DisplayName',['v(0, x) = 0'], 'Color', obj.color0)
+                end
+                if fci.box(1,2) == obj.opt.Tmax
+                    curr_v1 = fcell{i}.v1;
+                    curr_lim = reshape(fcell{i}.box(2:end, :)', 1, []);
+                    fimplicit(@(x,y) curr_v1([x;y]), curr_lim, 'DisplayName',['v(T, x) = 0'], 'Color', obj.color1)
+                end
+                
+            end
             
-            v1_sep = @(x,y) obj.out.func.v1([x;y]);
-            v1_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v1_sep(x(i), y(i)),...
-    (1:length(x)),'UniformOutput',false));
-            fimplicit(a,v1_sep_vec, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
-    
+%             v0_sep = @(x,y) obj.out.func.v0([x;y])-out.opt.epsilon;
+%             v0_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v0_sep(x(i), y(i)),...
+%     (1:length(x)),'UniformOutput',false));
+%             fimplicit(a, v0_sep_vec, limits,'DisplayName',['v(0, x) = ', num2str(obj.opt.epsilon)], 'Color', obj.color0)
+            
+            
+% 
+%             v1_sep = @(x,y) obj.out.func.v1([x;y]);
+%             v1_sep_vec = @(x,y)cell2mat(arrayfun(@(i)v1_sep(x(i), y(i)),...
+%     (1:length(x)),'UniformOutput',false));
+%             fimplicit(a,v1_sep_vec, limits,'DisplayName','v(T, x) = 0', 'Color', obj.color1)
+%     
             
             legend('location', 'northwest')
             
@@ -134,7 +153,21 @@ classdef lobe_plotter < set_plotter_interface
                 plot3(obj.axlim.t, obj.opt.X1(1, i)*[1,1], obj.opt.X1(2, i)*[1,1], 'k', 'HandleVisibility', 'Off')
             end
             
-            fimplicit3(@(t,x,y)obj.out.func.v([t;x;y]), limits, 'MeshDensity', 120)
+                        fcell = obj.out.func.func_cell;
+%             Tmax = obj.out.Tmax;
+            for i = 1:length(fcell)
+                fci = fcell{i};
+                curr_v= fcell{i}.v;
+                curr_lim = reshape(fcell{i}.box', 1, []);
+                fimplicit3(@(t, x,y) curr_v([t/obj.opt.Tmax;x;y]), curr_lim, 'DisplayName',['v(t,x) = 0'])               
+            end
+            
+            for i = 1:length(obj.out_sim)
+            %     out_sim = set_walk(x0(), X_func, @() u_func(2), Tmax, dt);
+                plot3(obj.out_sim{i}.t_traj,obj.out_sim{i}.x_traj(:, 1), obj.out_sim{i}.x_traj(:, 2), 'c', 'HandleVisibility', 'off');
+            end 
+            
+%             fimplicit3(@(t,x,y)obj.out.func.v([t;x;y]), limits, 'MeshDensity', 120)
             
             
             xlabel('t')

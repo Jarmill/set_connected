@@ -102,6 +102,14 @@ classdef ring_circ_plotter < set_plotter_interface
                 plot(a,obj.out_sim{i}.x(1, :), obj.out_sim{i}.x(2, :), 'c', 'HandleVisibility', 'off');
             end 
             
+            fcell = obj.out.func.func_cell;
+            for i = 1:length(fcell)
+                curr_v = fcell{i}.v;
+                curr_lim = reshape(fcell{i}.box', 1, []);
+%                 fsurf(@(t,r) curr_v([t/opt.Tmax;r]), curr_lim,'DisplayName','v(t, x)')
+                fcontour(@(t,r) curr_v([t/obj.opt.Tmax;r]), curr_lim, 'k', 'LineWidth', 4, 'DisplayName','v(t, x)=0', 'LevelList', 0)
+            end
+            
             %initial and final locations
 %             scatter(a,obj.opt.X0(1, :), obj.opt.X0(2, :), 100, 'ok', 'DisplayName', 'X0')
 %             scatter(a,obj.opt.X1(1, :), obj.opt.X1(2, :), 100, '*k', 'DisplayName', 'X1')
@@ -146,7 +154,7 @@ classdef ring_circ_plotter < set_plotter_interface
                 plot3(obj.axlim.t, obj.opt.X1(1, i)*[1,1], obj.opt.X1(2, i)*[1,1], 'k', 'HandleVisibility', 'Off')
             end
             
-            fimplicit3(obj.func.v == 0, limits, 'MeshDensity', 120)
+%             fimplicit3(obj.func.v == 0, limits, 'MeshDensity', 120)
             
             
             xlabel('t')
