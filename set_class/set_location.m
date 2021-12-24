@@ -70,12 +70,16 @@ classdef set_location < handle
 
             n = length(x);
             
-            zeta = [];
+            zeta_neg = [];
+            zeta_pos = [];
             coeff_zeta = [];
             for i = 1:n
-                [pzeta, czeta] = polynomial([t; x], d);
-                zeta = [zeta; pzeta];
-                coeff_zeta = [coeff_zeta; czeta];
+                [pzeta_pos, czeta_pos] = polynomial([t; x], d);
+                zeta_pos = [zeta_pos; pzeta_pos];
+                [pzeta_neg, czeta_neg] = polynomial([t; x], d);
+                zeta_neg = [zeta_neg; pzeta_neg];
+                
+                coeff_zeta = [coeff_zeta; czeta_pos; czeta_neg];
             end
             
             %polynomials and derivatives for spline constraints
@@ -99,7 +103,7 @@ classdef set_location < handle
             else
                 poly_vec = v;
             end
-            poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x',x, 'vec', poly_vec);
+            poly_out=struct('v', v, 'zeta_neg', zeta_neg, 'zeta_pos', zeta_pos, 't', t, 'x',x, 'vec', poly_vec);
             coeff_out = [cv; coeff_zeta];
         end
 
@@ -218,22 +222,28 @@ classdef set_location < handle
             n = length(x);
             
             v = poly_var.v;
-            zeta = poly_var.zeta;
-            zeta_sum = sum(zeta);
+            zeta_neg = poly.zeta_neg;
+            zeta_pos = poly.zeta_pos;
+            zeta_sum = sum(zeta_pos) + sum(zeta_neg);
+            
+%             zeta = poly_var.zeta;
+%             zeta_sum = sum(zeta);
             
             %occupation measures
-            Lv = jacobian(v, t) - scale_weight*jacobian(v,x)*ones(n, 1) - zeta_sum;
+            Lv = jacobian(v, t) + zeta_sum;
             nonneg_lie.occ = Lv; %Lv >= 0
             
             %box-input measures
             term_ui = [];
             for i = 1:n
-                term_ui = [term_ui; zeta(i) + scale_weight*2*jacobian(v,x(i))];                
+                term_ui = [term_ui; zeta_pos(i)-zeta_neg(i) - scale_weight*jacobian(v,x(i))];                                
             end            
             
-            nonneg_lie.u = term_ui;     
+            nonneg.u = term_ui;     
             
-            nonneg_lie.slack = zeta;
+            nonneg.slack = [zeta_pos; zeta_neg];
+            
+            nonneg_lie.u = term_ui;     
             
         end
         
@@ -285,12 +295,8 @@ classdef set_location < handle
                 coeff_occ = [coeff_occ; coeff_occ_curr];
                 
                 
-                for j = 1:n
+                for j = 1:(2*n)
                     %box 
-                    [con_u_curr, coeff_u_curr] = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
-                    con_u_curr = con_u_curr:['Cell ', num2str(obj.id), ' Lie input ', num2str(j)];
-                    con_u = [con_u; con_u_curr];
-                    coeff_u = [coeff_u; coeff_u_curr];
 
                 
                     
@@ -302,11 +308,19 @@ classdef set_location < handle
                 
                 end
                 
+%                 for j = 1:n
+%                     [con_u_curr, coeff_u_curr] = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
+%                     con_u_curr = con_u_curr:['Cell ', num2str(obj.id), ' Lie input ', num2str(j)];
+%                     con_u = [con_u; con_u_curr];
+%                     coeff_u = [coeff_u; coeff_u_curr];
+
                 
             end    
             
-            con_lie = [con_occ; con_u; con_slack];
-            coeff_lie = [coeff_occ; coeff_u; coeff_slack];
+            u_coeff = coefficients(nonneg.u, [t;x]);
+            
+            con_lie = [con_occ;  con_slack; u_coeff==0];
+            coeff_lie = [coeff_occ; coeff_slack];
             
         end
         
@@ -395,7 +409,7 @@ classdef set_location < handle
             [cv,mv] = coefficients(poly_var.v,[poly_var.t; poly_var.x]);
             v_eval = value(cv)'*mv;
 
-            [cz, mz] = coefficients(poly_var.zeta,[poly_var.t; poly_var.x]);
+            [cz, mz] = coefficients([poly_var.zeta_pos; poly_var.zeta_neg],[poly_var.t; poly_var.x]);
             if n == 1
                 zeta_eval = value(cz)'*mz;
             else
