@@ -27,7 +27,7 @@ X = fill_constraint(X);
 
 %equalities
 for i = 1:length(X.eq)
-    [seq, ceq] = polynomial(vars, d - max(0, degree(X.eq(i))));
+    [seq, ceq] = polynomial(vars,  max(0, d - degree(X.eq(i))));
     
     p_out = p_out - seq * X.eq(i);    
     coeff_list = [coeff_list; ceq];    
@@ -35,7 +35,7 @@ end
 
 %inequalities
 for i = 1:length(X.ineq)
-    [sineq, cineq] = polynomial(vars, max(0, d - degree(X.ineq(i))));
+    [sineq, cineq] = polynomial(vars, max(0, d - 2*ceil(degree(X.ineq(i))/2)));
     
     p_out = p_out - sineq * X.ineq(i);
     coeff_list = [coeff_list; cineq];
