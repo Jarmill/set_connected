@@ -141,7 +141,7 @@ classdef set_manager
             [cv,mv] = coefficients(poly_var.v,[poly_var.t; poly_var.x]);
             v_eval = value(cv)'*mv;
 
-            [cz, mz] = coefficients(poly_var.zeta,[poly_var.t; poly_var.x]);
+            [cz, mz] = coefficients([poly_var.zeta_pos; poly_var.zeta_neg],[poly_var.t; poly_var.x]);
             if n == 1
                 zeta_eval = value(cz)'*mz;
             else
@@ -199,15 +199,19 @@ classdef set_manager
 
             n = length(x);
             
-            zeta = [];
+            zeta_neg = [];
+            zeta_pos = [];
             coeff_zeta = [];
             for i = 1:n
-                [pzeta, czeta] = polynomial([t; x], d);
-                zeta = [zeta; pzeta];
-                coeff_zeta = [coeff_zeta; czeta];
+                [pzeta_pos, czeta_pos] = polynomial([t; x], d);
+                zeta_pos = [zeta_pos; pzeta_pos];
+                [pzeta_neg, czeta_neg] = polynomial([t; x], d);
+                zeta_neg = [zeta_neg; pzeta_neg];
+                
+                coeff_zeta = [coeff_zeta; czeta_pos; czeta_neg];
             end
             
-            poly_out=struct('v', v, 'zeta', zeta, 't', t, 'x', x);
+            poly_out=struct('v', v, 'zeta_neg', zeta_neg, 'zeta_pos', zeta_pos,'t', t, 'x', x);
             coeff_out = [cv; coeff_zeta];
         end
         
@@ -222,8 +226,9 @@ classdef set_manager
             
             %polynomials
             v = poly.v;
-            zeta = poly.zeta;
-            zeta_sum = sum(zeta);
+            zeta_neg = poly.zeta_neg;
+            zeta_pos = poly.zeta_pos;
+            zeta_sum = sum(zeta_pos) + sum(zeta_neg);
             
             %time-scaling
             if obj.options.scale
@@ -244,7 +249,7 @@ classdef set_manager
             
             %initial set
             v0 = replace(v, t, 0);
-            nonneg.init = v0 - opt.epsilon; %v0 >= 1
+            nonneg.init = v0 - obj.options.epsilon; %v0 >= 1
             
             %terminal set
             if obj.options.scale
@@ -255,18 +260,18 @@ classdef set_manager
             nonneg.term = -vT; %vT <= 0
             
             %occupation measures
-            Lv = jacobian(v, t) - scale_weight*jacobian(v,x)*ones(n, 1) - zeta_sum;
+            Lv = jacobian(v, t) + zeta_sum;
             nonneg.occ = Lv; %Lv >= 0
             
             %box-input measures
             term_ui = [];
             for i = 1:n
-                term_ui = [term_ui; zeta(i) + scale_weight*2*jacobian(v,x(i))];                
+                term_ui = [term_ui; zeta_pos(i)-zeta_neg(i) - scale_weight*jacobian(v,x(i))];                                
             end            
             
             nonneg.u = term_ui;     
             
-            nonneg.slack = zeta;
+            nonneg.slack = [zeta_pos; zeta_neg];
             
             nonneg_infeas = nonneg;            
 %             nonneg_feas = nonneg;
@@ -348,7 +353,7 @@ classdef set_manager
              
             
             cc_occ = coef_con();
-            cc_u = coef_con();
+%             cc_u = coef_con();
             cc_slack = coef_con();
             for i = 1:length(X_cell)
                 X_curr = X_cell{i};
@@ -359,10 +364,10 @@ classdef set_manager
                 cc_occ = [cc_occ; cc_occ_curr];
                 
                 
-                for j = 1:n
+                for j = 1:(2*n)
                     %box 
-                    cc_u_curr = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
-                    cc_u = [cc_u; cc_u_curr];
+%                     cc_u_curr = obj.make_psatz(d, X_curr, nonneg.u(j), [t; x]);
+%                     cc_u = [cc_u; cc_u_curr];
                     
                     %complement
                     cc_slack_curr = obj.make_psatz(d, X_curr, nonneg.slack(j), [t; x]);
@@ -372,12 +377,16 @@ classdef set_manager
                 
             end    
             
+            u_coeff = coefficients(nonneg.u, [t;x]);
+            
             %pack everything up
 %             cc_all = [cc_init; cc_term; cc_occ; cc_u; cc_slack];
             cc_all = [cc_init; cc_term];
             cc_all = [cc_all; cc_occ];
-            cc_all = [cc_all; cc_u];
+%             cc_all = [cc_all; cc_u];
             cc_all = [cc_all; cc_slack];
+            
+            cc_all.con = [cc_all.con; u_coeff==0];
             
         end
         
