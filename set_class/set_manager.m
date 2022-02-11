@@ -244,7 +244,7 @@ classdef set_manager
             
             %initial set
             v0 = replace(v, t, 0);
-            nonneg.init = v0 - opt.epsilon; %v0 >= 1
+            nonneg.init = v0 - obj.options.epsilon; %v0 >= 1
             
             %terminal set
             if obj.options.scale
