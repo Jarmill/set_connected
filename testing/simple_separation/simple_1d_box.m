@@ -53,14 +53,14 @@ cons= [v0 >= epsilon; vT <= 0];
 Tvar = 1;
 vT = replace(v, [t; x], [T; X1]);
 
-[pL, consL, coeffL] = constraint_psatz(Lv, All_left, [t; x; u], d);
-[pR, consR, coeffR] = constraint_psatz(Lv, All_right, [t; x; u], d);
+[pL, consL, coeffL] = constraint_psatz(Lv, All_left, [t;x], d);
+[pR, consR, coeffR] = constraint_psatz(Lv, All_right, [t;x], d);
 
-[pzetaL, conszetaL, coeffzetaL] = constraint_psatz(zeta, All_left, [t; x; u], d);
-[pzetaR, conszetaR, coeffzetaR] = constraint_psatz(zeta, All_right, [t; x; u], d);
+[pzetaL, conszetaL, coeffzetaL] = constraint_psatz(zeta, All_left, [t;x], d);
+[pzetaR, conszetaR, coeffzetaR] = constraint_psatz(zeta, All_right, [t;x], d);
 
-[puL, consuL, coeffuL] = constraint_psatz(ui, All_left, [t; x; u], d);
-[puR, consuR, coeffuR] = constraint_psatz(ui, All_right, [t; x; u], d);
+[puL, consuL, coeffuL] = constraint_psatz(ui, All_left, [t;x], d);
+[puR, consuR, coeffuR] = constraint_psatz(ui, All_right, [t;x], d);
 
 nonneg = [Lv; zeta; ui];
 

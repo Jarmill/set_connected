@@ -9,11 +9,21 @@ r = 0;
 % epsilon = 0.01;
 epsilon = 1;
 
+% xbox = [-1; 1];
+% xbox = [-1; 0.5];
+xbox = [-0.3; 0.3];
+% xbox = [-2;2];
+
 % low = 0.4;
 % low = 0.7;
 % high = 0.8;
-low = 0.45;
-high = 0.55;
+% low_alpha= 0.5;
+% high_alpha= 0.55;
+low_alpha = 0.7;
+high_alpha = 0.75;
+low = xbox(2)*low_alpha+ xbox(1)*(1-low_alpha);
+high = xbox(2)*high_alpha+ xbox(1)*(1-high_alpha);
+
 
 
 % low = 0.6;
@@ -22,16 +32,19 @@ high = 0.55;
 % X0 = 0.3;
 % X1 = 0.9;
 
-X0 = 0.1;
-X1 = 0.9;
+X0_alpha = 0.2;
+X1_alpha = 0.9;
+
+X0 = xbox(2)*X0_alpha + xbox(1)*(1-X0_alpha);
+X1 = xbox(2)*X1_alpha + xbox(1)*(1-X1_alpha);
 
 %% variables and support sets
 t = sdpvar(1,1);
 x = sdpvar(1,1);
 u = sdpvar(1,1);
 
-Xleft = struct('ineq', [(low-x)*x], 'eq', []);
-Xright = struct('ineq', [(1-x)*(x - high)], 'eq', []);
+Xleft = struct('ineq', [(low-x)*(x-xbox(1))], 'eq', []);
+Xright = struct('ineq', [(xbox(2)-x)*(x - high)], 'eq', []);
 
 X = {Xleft, Xright};
     
@@ -81,21 +94,22 @@ opts.sos.model = 2;
 
 if sol.problem == 0
     v_rec = value(cv)' * monolist([t; x], d);
+    nv_rec = norm(value(cv));
 fv = polyval_func(v_rec, [t; x]);
 
 vv0 = fv([0; X0]);
 vv1star = fv([-vv0; X1]);
 vv1 = fv([T; X1]);
 % [vv0, vv1star, vv1]
-fprintf('v(0,x0) = %0.3f, \t v(T, x1) = %0.3f \n', vv0, vv1)
+fprintf('v(0,x0) = %0.3f, \t v(T, x1) = %0.3f, \t norm(cv) = %0.3f \n', vv0, vv1, nv_rec)
 
 figure(5)
 
 clf
-fsurf(@(t,x) fv([t;x]), [0,T,0,1], 'DisplayName', 'v(t,x)')
+fsurf(@(t,x) fv([t;x]), [0,T,xbox'], 'DisplayName', 'v(t,x)')
 
 hold on
-fcontour(@(t,x) fv([t;x]), [0,T,0,1], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
+fcontour(@(t,x) fv([t;x]), [0,T,xbox'], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
 
 scatter3(0,X0, fv([0; X0]), 400, 'ko', 'DisplayName', 'X0', 'LineWidth', 3)
 scatter3(T,X1,fv([T; X1]), 400, 'k*', 'DisplayName', 'X1', 'LineWidth', 3)
