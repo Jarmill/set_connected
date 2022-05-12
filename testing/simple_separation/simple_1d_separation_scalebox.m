@@ -1,5 +1,5 @@
 %Certify set disconnectedness
-%union of [0, low] and [high, 1]
+% %union of [0, low] and [high, 1]
 
 order = 1; 
 d =2*order;

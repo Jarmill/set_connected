@@ -10,13 +10,13 @@ r = 0;
 epsilon = 1;
 
 % offset = 0;
-offset = 0;
-% offset = 0.75;
+% offset = 0;
+offset = 0.75;
 
 % sep = 0.25;
-% sep=0.1;
+sep=0.1;
 % sep=0.05;
-sep = 0.025;
+% sep = 0.025;
 % sep = 0.01;
 
 
