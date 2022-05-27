@@ -16,8 +16,8 @@ e = 0.05;
 % e=0.01;
 epsilon = 1;
 
-% xbox = [-1;1];      %works, feasible barrier
-xbox = [-0.1;1];     %doesn't work, infeasible SDP
+xbox = [-1;1];      %works, feasible barrier
+% xbox = [-0.1;1];     %doesn't work, infeasible SDP
 
 
 T = 1;
