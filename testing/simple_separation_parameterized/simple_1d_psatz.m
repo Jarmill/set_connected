@@ -72,8 +72,8 @@ cons= [(v0 >= epsilon):'initial'; (vT <= 0):'terminal'];
 % % vT = replace(v, [t; x], [T; X1]);
 
 
-[pL, consL, GramL, MuL] = psatz(Lv, All_left, order, [t;x;u]);
-[pR, consR, GramR, MuR] = psatz(Lv, All_right, order, [t;x;u]);
+[pL, consL, GramL] = psatz(Lv, All_left, order, [t;x;u]);
+[pR, consR, GramR] = psatz(Lv, All_right, order, [t;x;u]);
 % [pL, consL, GramL, MuL] = psatz(Lv, All_left, order, [t;x;u])
 
 % [pL, consL, coeffL] = constraint_psatz(Ru*Lv, All_left, [t; x; u], d);
@@ -93,7 +93,7 @@ P = optimizer(cons,objective,opts,xbox, cv);
 cv_rec = P([-1,1]);
 % P([-0.3,0.3])
 
-% sol = optimize(cons, objective, opts);
+sol = optimize(cons, objective, opts);
 % opts.sos.model = 2;
 
 % value(v0)

@@ -1,7 +1,9 @@
 %Certify set disconnectedness
 % %union of [0, low] and [high, 1]
 
-order = 1; 
+% order = 1;
+% order = 2;
+order = 3;
 d =2*order;
 T = 1; %maximum time
 % r = 5;
@@ -76,8 +78,8 @@ cons= [(v0 >= epsilon):'initial'; (vT <= 0):'terminal'];
 % % vT = replace(v, [t; x], [T; X1]);
 
 
-[pL, consL, GramL, MuL] = psatz(Lv, All_left, order, [t;x;u]);
-[pR, consR, GramR, MuR] = psatz(Lv, All_right, order, [t;x;u]);
+[pL, consL, GramL] = psatz(Lv, All_left, order, [t;x;u]);
+[pR, consR, GramR] = psatz(Lv, All_right, order, [t;x;u]);
 % [pL, consL, GramL, MuL] = psatz(Lv, All_left, order, [t;x;u])
 
 % [pL, consL, coeffL] = constraint_psatz(Ru*Lv, All_left, [t; x; u], d);
@@ -104,6 +106,7 @@ cv_rec = P([-1,1]);
 %% plot and recovery
 
 Npts = 31;
+% Npts = 5;
 [ yy,xx] = meshgrid(linspace(-1,1, Npts));
 
 success = zeros(size(xx));
@@ -129,9 +132,10 @@ scatter(success_range(:, 1), success_range(:, 2) )
 
 xlim([-1,1]);
 ylim([-1,1]);
+axis square
 xlabel('xbox(1)')
 ylabel('xbox(2)')
-title('Successful degree-2 v(t,x) disconnectedness certificates')
+title(sprintf('Successful degree-%d v(t,x) disconnectedness certificates', d))
 
 % if sol.problem == 0
 %     v_rec = value(cv)' * monolist([t; x], d);
