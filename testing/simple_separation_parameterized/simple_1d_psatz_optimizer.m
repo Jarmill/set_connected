@@ -1,9 +1,9 @@
 %Certify set disconnectedness
 % %union of [0, low] and [high, 1]
 
-% order = 1;
+order = 1;
 % order = 2;
-order = 3;
+% order = 3;
 d =2*order;
 T = 1; %maximum time
 % r = 5;
