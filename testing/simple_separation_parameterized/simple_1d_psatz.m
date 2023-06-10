@@ -93,16 +93,17 @@ P = optimizer(cons,objective,opts,xbox, cv);
 cv_rec = P([-1,1]);
 % P([-0.3,0.3])
 
-sol = optimize(cons, objective, opts);
+% sol = optimize(cons, objective, opts);
 % opts.sos.model = 2;
 
 % value(v0)
 %% plot and recovery
 
 
-if sol.problem == 0
-    v_rec = value(cv)' * monolist([t; x], d);
+% if sol.problem == 0
+%     v_rec = value(cv)' * monolist([t; x], d);
     nv_rec = norm(value(cv));
+    v_rec = cv_rec' * monolist([t; x], d);
 fv = polyval_func(v_rec, [t; x]);
 
 vv0 = fv([0; X0]);
@@ -142,6 +143,6 @@ xlabel('time')
 zlabel('v')
 title(sprintf('Auxiliary Function on 1d Separation (order=%d)', order), 'FontSize', 16)
 legend('location', 'northwest')
-else
-    fprintf('infeasible\n')
-end
+% else
+%     fprintf('infeasible\n')
+% end

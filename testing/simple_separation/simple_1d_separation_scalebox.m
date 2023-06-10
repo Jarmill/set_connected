@@ -1,17 +1,19 @@
 %Certify set disconnectedness
 % %union of [0, low] and [high, 1]
 
-order = 1; 
+order =5; 
 d =2*order;
 T = 1; %maximum time
 % r = 5;
 r = 0;
+% alpha = 10;
+alpha = 0;
 % epsilon = 0.01;
 epsilon = 1;
 
-% xbox = [-1; 1];
+xbox = [-1; 1];
 % xbox = [-1; 0.5];
-xbox = [-0.3; 0.3];
+% xbox = [-0.3; 0.3];
 % xbox = [-2;2];
 
 % low = 0.4;
@@ -32,8 +34,11 @@ high = xbox(2)*high_alpha+ xbox(1)*(1-high_alpha);
 % X0 = 0.3;
 % X1 = 0.9;
 
-X0_alpha = 0.2;
+% X0_alpha = 0.2;
+% X0_alpha = 0.3;
+X0_alpha = 0.35;
 X1_alpha = 0.9;
+% X1_alpha = 0.85;
 
 X0 = xbox(2)*X0_alpha + xbox(1)*(1-X0_alpha);
 X1 = xbox(2)*X1_alpha + xbox(1)*(1-X1_alpha);
@@ -48,7 +53,7 @@ Xright = struct('ineq', [(xbox(2)-x)*(x - high)], 'eq', []);
 
 X = {Xleft, Xright};
     
-Tcons = struct('ineq', t*(T-t), 'eq', []);
+Tcons = struct('ineq', t*(1-t), 'eq', []);
 
 % U = struct('ineq', [1-u; u+1], 'eq', []);
 U = struct('ineq', 1-u^2, 'eq', []);
@@ -61,10 +66,10 @@ All_right = struct('ineq', [Tcons.ineq; Xright.ineq; U.ineq], 'eq', []);
 %test sos program 
 
 %% formulate constraints
-Lv = jacobian(v, t) + jacobian(v,x)*u;
+Lv = jacobian(v, t) + jacobian(v,x)*u*T + alpha*v;
 
 v0 = replace(v, [t;x], [0; X0]);
-vT = replace(v, [t;x], [T;X1]);
+vT = replace(v, [t;x], [1;X1]);
 
 cons= [v0 >= epsilon; vT <= 0];
 
@@ -88,6 +93,8 @@ opts.sos.model = 2;
 
 [sol, monom, Gram, residual] = solvesos(cons, objective, opts, [coeff]);
 
+
+
 % value(v0)
 %% plot and recovery
 
@@ -99,26 +106,26 @@ fv = polyval_func(v_rec, [t; x]);
 
 vv0 = fv([0; X0]);
 vv1star = fv([-vv0; X1]);
-vv1 = fv([T; X1]);
+vv1 = fv([1; X1]);
 % [vv0, vv1star, vv1]
 fprintf('v(0,x0) = %0.3f, \t v(T, x1) = %0.3f, \t norm(cv) = %0.3f \n', vv0, vv1, nv_rec)
 
 figure(5)
 
 clf
-fsurf(@(t,x) fv([t;x]), [0,T,xbox'], 'DisplayName', 'v(t,x)')
+fsurf(@(t,x) fv([t;x]), [0,1,xbox'], 'DisplayName', 'v(t,x)')
 
 hold on
-fcontour(@(t,x) fv([t;x]), [0,T,xbox'], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
+fcontour(@(t,x) fv([t;x]), [0,1,xbox'], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
 
 scatter3(0,X0, fv([0; X0]), 400, 'ko', 'DisplayName', 'X0', 'LineWidth', 3)
-scatter3(T,X1,fv([T; X1]), 400, 'k*', 'DisplayName', 'X1', 'LineWidth', 3)
+scatter3(1,X1,fv([1; X1]), 400, 'k*', 'DisplayName', 'X1', 'LineWidth', 3)
 % h = axes;
 set(gca, 'Ydir', 'reverse')
 
 
 zl = zlim;
-xl_pattern = [0, T, T, 0, 0];
+xl_pattern = [0, 1, 1, 0, 0];
 zl_pattern = zl([1, 1, 2, 2, 1]);
 patch(xl_pattern, low*ones(5,1), zl_pattern, 'k', 'FaceAlpha', 0.2, 'EdgeColor', 'None', 'HandleVisibility', 'Off')
 patch(xl_pattern, high*ones(5,1), zl_pattern, 'k', 'FaceAlpha', 0.2, 'EdgeColor', 'None', 'DisplayName', 'Region')
@@ -126,6 +133,9 @@ patch(xl_pattern, high*ones(5,1), zl_pattern, 'k', 'FaceAlpha', 0.2, 'EdgeColor'
 ylabel('radius')
 xlabel('time')
 zlabel('v')
-title(sprintf('Auxiliary Function on 1d Separation (order=%d)', order), 'FontSize', 16)
+title(sprintf('Barrier Function on 1d Separation (order=%d)', order), 'FontSize', 16)
 legend('location', 'northwest')
+    disp('feasible')
+else
+    disp('infeasible')
 end

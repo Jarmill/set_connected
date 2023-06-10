@@ -1,4 +1,4 @@
-SOLVE = 0;
+SOLVE = 1;
 PLOT = 1;
 
 FEAS = 1;
@@ -20,6 +20,8 @@ opt.scale = 0;
 a = 1;
 % f = @(x) -(x(1).^2-a^2)*(x(1)-a).^2 + (x(2).^2-a^2).^2;
 f = @(x, y) -(x.^2-a^2)*(x-a).^2 + (y.^2-a^2).^2;
+%% 
+
 X.ineq = f(opt.x(1), opt.x(2));
 X = fill_constraint(X);
 

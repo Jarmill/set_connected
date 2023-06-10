@@ -17,7 +17,7 @@ order = 1;
 d =2*order;
 T = 2; %maximum time
 
-FEAS = 1;
+FEAS = 0;
 
 if FEAS
     x0 = [1.25; -1];
@@ -85,5 +85,5 @@ v_rec = value(cv)' * monolist([t; x], d);
 fv = polyval_func(v_rec, [t; x]);
 
 vv0 = fv([0; x0]);
-vv1 = fv([T; x1]));
+vv1 = fv([T; x1]);
 [vv0, vv1];

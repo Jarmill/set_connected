@@ -1,6 +1,9 @@
 %points in two different lobes of an elliptic curve
 
+SOLVE = 1;
+PLOT = 1;
 
+if SOLVE
 opt = set_path_options;
 
 opt.t = sdpvar(1, 1);
@@ -25,3 +28,9 @@ opt.X1 = X1;
 
 IM = set_manager(opt);
 out = IM.climb_connected([1, 8]);
+
+end
+
+if PLOT
+
+end

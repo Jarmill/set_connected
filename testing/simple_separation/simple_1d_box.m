@@ -1,31 +1,43 @@
 %Certify set disconnectedness with box control
 %1d set: union of [0, low] and [high, 1]
 
-order = 3; 
+order = 1; 
 d =2*order;
 T = 1; %maximum time
-epsilon = 0.01; %v(0, X0) >= epsilon
+epsilon = 0.1; %v(0, X0) >= epsilon
 
-%boundary of set
-low = 0.5;
-high = 0.7;
+xbox = [-1; 1];
+% xbox = [-1; 0.5];
+% xbox = [-0.3; 0.3];
+% xbox = [-2;2];
+
+% low = 0.4;
+% low = 0.7;
+% high = 0.8;
+% low_alpha= 0.5;
+% high_alpha= 0.55;
+low_alpha = 0.7;
+high_alpha = 0.75;
+low = xbox(2)*low_alpha+ xbox(1)*(1-low_alpha);
+high = xbox(2)*high_alpha+ xbox(1)*(1-high_alpha);
 
 %initial points
-% X0 = 0.2;
-% X1 = 0.9;
+% X0_alpha = 0.2;
+% X0_alpha = 0.3;
+X0_alpha = 0.35;
+X1_alpha = 0.9;
+% X1_alpha = 0.85;
 
-X1 = 0.3;
-X0 = 0.9;
-
-% X0 = 0.2;
-% X1 = 1;
+X0 = xbox(2)*X0_alpha + xbox(1)*(1-X0_alpha);
+X1 = xbox(2)*X1_alpha + xbox(1)*(1-X1_alpha);
 
 %% variables and support sets
 t = sdpvar(1,1);
 x = sdpvar(1,1);
 
-Xleft = struct('ineq', [low-x; x], 'eq', []);
-Xright = struct('ineq', [1-x; x - high], 'eq', []);
+
+Xleft = struct('ineq', [(low-x)*(x-xbox(1))], 'eq', []);
+Xright = struct('ineq', [(xbox(2)-x)*(x - high)], 'eq', []);
 
 X = {Xleft, Xright};
     
@@ -80,30 +92,25 @@ opts.sos.model = 2;
 
 
 %% plot and recovery
+
 if sol.problem == 0
-
-    % value(v0)
-
-v_rec = value(cv)' * monolist([t; x], d);
-zeta_rec = value(czeta)' * monolist([t; x], d);
+    v_rec = value(cv)' * monolist([t; x], d);
+    nv_rec = norm(value(cv));
 fv = polyval_func(v_rec, [t; x]);
-fzeta = polyval_func(zeta_rec, [t; x]);
 
-    
 vv0 = fv([0; X0]);
 vv1star = fv([-vv0; X1]);
 vv1 = fv([T; X1]);
 % [vv0, vv1star, vv1]
+fprintf('v(0,x0) = %0.3f, \t v(T, x1) = %0.3f, \t norm(cv) = %0.3f \n', vv0, vv1, nv_rec)
 
-fprintf('v(0,x0) = %0.3f, \t v(T, x1) = %0.3f \n', vv0, vv1)
-
-figure(4)
+figure(5)
 
 clf
-fsurf(@(t,x) fv([t;x]), [0,T,0,1], 'DisplayName', 'v(t,x)')
+fsurf(@(t,x) fv([t;x]), [0,T,xbox'], 'DisplayName', 'v(t,x)')
 
 hold on
-fcontour(@(t,x) fv([t;x]), [0,T,0,1], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
+fcontour(@(t,x) fv([t;x]), [0,T,xbox'], 'k', 'LevelList', 0, 'LineWidth', 4, 'DisplayName', 'v(t,x)=0');
 
 scatter3(0,X0, fv([0; X0]), 400, 'ko', 'DisplayName', 'X0', 'LineWidth', 3)
 scatter3(T,X1,fv([T; X1]), 400, 'k*', 'DisplayName', 'X1', 'LineWidth', 3)
@@ -120,6 +127,9 @@ patch(xl_pattern, high*ones(5,1), zl_pattern, 'k', 'FaceAlpha', 0.2, 'EdgeColor'
 ylabel('radius')
 xlabel('time')
 zlabel('v')
-title(sprintf('Auxiliary Function on 1d Separation (order=%d, box)', order), 'FontSize', 16)
+title(sprintf('Barrier Function on 1d Separation (order=%d)', order), 'FontSize', 16)
 legend('location', 'northwest')
+    disp('feasible')
+else
+    disp('infeasible')
 end
