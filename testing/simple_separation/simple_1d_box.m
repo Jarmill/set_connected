@@ -4,7 +4,8 @@
 order = 1; 
 d =2*order;
 T = 1; %maximum time
-epsilon = 0.1; %v(0, X0) >= epsilon
+% T = 2;
+epsilon = 1; %v(0, X0) >= epsilon
 
 xbox = [-1; 1];
 % xbox = [-1; 0.5];
@@ -24,6 +25,7 @@ high = xbox(2)*high_alpha+ xbox(1)*(1-high_alpha);
 %initial points
 % X0_alpha = 0.2;
 % X0_alpha = 0.3;
+% X0_alpha = 0.35;
 X0_alpha = 0.35;
 X1_alpha = 0.9;
 % X1_alpha = 0.85;

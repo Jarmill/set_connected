@@ -1,6 +1,6 @@
 %points in two different lobes of an elliptic curve
 
-SOLVE = 1;
+SOLVE = 0;
 PLOT = 1;
 
 if SOLVE
@@ -32,5 +32,8 @@ out = IM.climb_connected([1, 8]);
 end
 
 if PLOT
+    
+    eplot = elliptic_curve_plotter(opt, out);
+    eplot.set_plot();
 
 end

@@ -1,7 +1,7 @@
 %Certify set disconnectedness
 %union of [0, low] and [high, 1]
 
-order = 3; 
+order = 4; 
 d =2*order;
 T = 1; %maximum time
 % r = 5;
@@ -9,8 +9,11 @@ r = 0;
 % epsilon = 0.01;
 epsilon = 1;
 
-low = 0.4;
+% low = 0.4;
 % low = 0.7;
+low = 0.4; %works
+
+% low = 0.6; %works
 
 % low = 0.45;
 % high = 0.55;
@@ -22,7 +25,7 @@ high = 0.8;
 % X0 = 0.3;
 % X1 = 0.9;
 
-X0 = 0.1;
+X0 = 0.2;
 X1 = 0.9;
 
 %% variables and support sets
@@ -112,6 +115,6 @@ patch(xl_pattern, high*ones(5,1), zl_pattern, 'k', 'FaceAlpha', 0.2, 'EdgeColor'
 ylabel('radius')
 xlabel('time')
 zlabel('v')
-title(sprintf('Auxiliary Function on 1d Separation (order=%d)', order), 'FontSize', 16)
+title(sprintf('Barrier Function on 1d Separation (order=%d)', order), 'FontSize', 16)
 legend('location', 'northwest')
 end
